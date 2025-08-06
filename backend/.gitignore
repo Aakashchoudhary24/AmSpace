@@ -1,0 +1,64 @@
+# -----------------
+# Python
+# -----------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+*.eggs/
+
+# Byte-compiled / optimized / DLL files
+*.so
+
+# -----------------
+# Virtual Environment
+# -----------------
+env/
+venv/
+ENV/
+.venv/
+*.env
+.env.*       # e.g. .env.local, .env.dev
+
+# -----------------
+# Django
+# -----------------
+*.log
+db.sqlite3
+media/
+staticfiles/
+local_settings.py
+
+# Ignore collected static files
+static/
+
+# -----------------
+# Celery / Redis / Logs
+# -----------------
+celerybeat-schedule
+celerybeat.pid
+*.pid
+*.log
+
+# -----------------
+# VSCode / IDEs
+# -----------------
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# -----------------
+# OS files
+# -----------------
+.DS_Store
+Thumbs.db
+
+# -----------------
+# Docker
+# -----------------
+__docker_cache__/
+docker-data/
