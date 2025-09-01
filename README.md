@@ -18,7 +18,7 @@ This project was developed as part of the **23CSE311 Software Engineering** cour
 
 ---
 
-## 📖 About
+## About
 **AmSpace** – *The One-Stop Shop* – provides a secure, scalable, and user-friendly web environment that brings together:
 - **Academic tools**: classrooms, forums, attendance, placements  
 - **Administrative workflows**: leave/stayback requests, approvals  
@@ -28,7 +28,7 @@ The platform ensures **cross-campus discoverability**, **role-based access contr
 
 ---
 
-## 🚀 Features
+## Features
 
 ### Functional
 - **Authentication** – Institutional login for secure access  
@@ -50,7 +50,7 @@ The platform ensures **cross-campus discoverability**, **role-based access contr
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 **Frontend**  
 - Next.js / React.js  
@@ -72,7 +72,7 @@ The platform ensures **cross-campus discoverability**, **role-based access contr
 
 ---
 
-## 💻 System Requirements
+## System Requirements
 
 - **Web Browsers**: Chrome, Firefox, Safari, Edge  
 - **Devices**: Mobile-first, works on desktops/laptops  
@@ -81,7 +81,7 @@ The platform ensures **cross-campus discoverability**, **role-based access contr
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 - **Frontend** → Next.js + TailwindCSS  
 - **Backend** → Django REST APIs  
@@ -91,7 +91,7 @@ The platform ensures **cross-campus discoverability**, **role-based access contr
 
 ---
 
-## 📅 Project Timeline
+## Project Timeline
 
 | Phase | Week | Activities |
 |-------|------|------------|
@@ -104,5 +104,5 @@ The platform ensures **cross-campus discoverability**, **role-based access contr
 
 ---
 
-## 👥 Team
+## Team
 - **Rithu Mithra**, **K K Surendran**, **Anna Tresa Siji**, **Aakash Choudhary**
