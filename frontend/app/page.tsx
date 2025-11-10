@@ -1,103 +1,194 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Users, CalendarPlus, Gift, Coffee} from "lucide-react";
+
+export default function LandingPage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="min-h-screen bg-[url('/patterns/students-bg.svg')] bg-cover bg-center text-slate-900">
+      {/* Topbar */}
+      <div className="backdrop-blur-sm bg-white/60 border-b">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 px-6 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-fuchsia-500 rounded-xl flex items-center justify-center text-white font-extrabold">
+              AS
+            </div>
+            <div>
+              <div className="text-lg font-semibold">AmSpace</div>
+              <div className="text-xs text-slate-600">A campus hub for co-learning & campus life</div>
+            </div>
+          </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          <div className="flex items-center gap-3">
+            <div className="hidden md:block">
+              <Input
+                placeholder="Search events, clubs, study rooms..."
+                className="w-72"
+              />
+            </div>
+
+            <Link href="/auth/login">
+              <Button variant="ghost" size="sm">Log in</Button>
+            </Link>
+            <Link href="/auth/register">
+              <Button size="sm">Sign up</Button>
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </div>
+
+      {/* Hero */}  
+      <section className="max-w-6xl mx-auto px-6 py-20 flex flex-col md:flex-row items-center gap-12">
+        <div className="flex-1">
+          <h1 className="text-5xl sm:text-6xl font-extrabold leading-tight">
+            Meet • Learn • Collaborate
+          </h1>
+          <p className="mt-4 text-lg text-slate-700 max-w-2xl">
+            AmSpace is the student playground for learning together: form study rooms, join clubs,
+            register for events, and celebrate wins with your friends — all on campus.
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/dashboard">
+              <Button size="lg" className="shadow-lg">Enter the Hub</Button>
+            </Link> 
+
+            <Link href="/events">
+              <Button variant="outline" size="lg" className="px-5">Explore Events</Button>
+            </Link>
+
+            <Link href="/clubs">
+              <Button variant="outline" size="lg" className="px-5">Clubs</Button>
+            </Link>
+          </div>
+
+          <div className="mt-6 flex items-center gap-4">
+            <Avatar>
+              <AvatarImage src="/avatar-1.jpg" alt="student" />
+              <AvatarFallback>AR</AvatarFallback>
+            </Avatar>
+            <div className="text-sm">
+              <span className="font-semibold">Rithu</span>
+              <div className="text-xs text-slate-500">Joined a hackathon — 2 hrs ago</div>
+            </div>
+
+            <Badge className="ml-4" variant="secondary">1200+ students active</Badge>
+          </div>
+        </div>
+
+        {/* Right visual/card */}
+        <div className="w-full md:w-1/2">
+          <Card className="p-4 bg-gradient-to-tr from-white/80 to-indigo-50">
+            <CardHeader className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-indigo-100">
+                <Users className="h-6 w-6 text-indigo-700" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Quick join</CardTitle>
+                <div className="text-xs text-slate-600">Pick a room or event and hop in</div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="mt-3 grid gap-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium">CSE Study Room</div>
+                  <div className="text-xs text-slate-500">Algorithms study sesh • 9 people</div>
+                </div>
+                <Button size="sm">Join</Button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium">Open Mic Night</div>
+                  <div className="text-xs text-slate-500">Cultural Club • Oct 21</div>
+                </div>
+                <Button variant="outline" size="sm">Register</Button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium">Design Collab</div>
+                  <div className="text-xs text-slate-500">Project pairing • 3 teams forming</div>
+                </div>
+                <Button variant="ghost" size="sm">View</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Feature grid — student-focused */}
+      <section className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <Card className="p-4 hover:scale-[1.02] transition-transform">
+          <CardHeader className="flex items-center gap-3">
+            <div className="p-2 rounded-md bg-amber-100">
+              <Coffee className="h-6 w-6 text-amber-700" />
+            </div>
+            <CardTitle>Study Rooms</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-slate-600">
+            Create or join focused rooms — set timers, share notes, and pair with study buddies.
+          </CardContent>
+        </Card>
+
+        <Card className="p-4 hover:scale-[1.02] transition-transform">
+          <CardHeader className="flex items-center gap-3">
+            <div className="p-2 rounded-md bg-emerald-100">
+              <CalendarPlus className="h-6 w-6 text-emerald-700" />
+            </div>
+            <CardTitle>Events & Fests</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-slate-600">
+            Discover workshops, hackathons, and cultural nights — RSVP and invite friends.
+          </CardContent>
+        </Card>
+
+        <Card className="p-4 hover:scale-[1.02] transition-transform">
+          <CardHeader className="flex items-center gap-3">
+            <div className="p-2 rounded-md bg-violet-100">
+              <Gift className="h-6 w-6 text-violet-700" />
+            </div>
+            <CardTitle>Clubs & Projects</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-slate-600">
+            Join clubs, collaborate on projects, and showcase your work at campus expos.
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* CTA strip */}
+      <section className="mt-6 bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white py-8">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <h3 className="text-2xl font-semibold">Ready to hang out with your campus?</h3>
+            <p className="text-sm text-indigo-100">Sign up and jump straight into events, study rooms, or a club meeting.</p>
+          </div>
+
+          <div className="flex gap-3">
+            <Link href="/auth/register"><Button size="lg">Create Free Account</Button></Link>
+            <Link href="/events"><Button variant="ghost" size="lg">Browse Events</Button></Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="mt-10 py-8 text-sm text-slate-600">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>AmSpace — built for students • © {new Date().getFullYear()}</div>
+          <div className="flex items-center gap-4">
+            <div className="text-xs">Privacy</div>
+            <div className="text-xs">Terms</div>
+            <div className="text-xs">Contact</div>
+          </div>
+        </div>
       </footer>
-    </div>
+    </main>
   );
 }
