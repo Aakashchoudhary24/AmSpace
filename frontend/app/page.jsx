@@ -63,7 +63,7 @@ export default function LandingPage() {
               <Button variant="outline" size="lg" className="px-5">Explore Events</Button>
             </Link>
 
-            <Link href="/clubs">
+            <Link href="/events">
               <Button variant="outline" size="lg" className="px-5">Clubs</Button>
             </Link>
           </div>
