@@ -1,7 +1,7 @@
 export default function Clubs() {
-    return (
-        <>
-            <h1>Clubs page</h1>
-        </>
-    )
+  return (
+    <>
+      <h1>Clubs page</h1>
+    </>
+  );
 }
