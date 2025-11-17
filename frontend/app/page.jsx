@@ -30,7 +30,7 @@ export default function LandingPage() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/dashboard">
+            <Link href="/discover">
               <Button size="lg" className="shadow-lg">Enter the Hub</Button>
             </Link>
 
@@ -38,7 +38,7 @@ export default function LandingPage() {
               <Button variant="outline" size="lg" className="px-5">Explore Events</Button>
             </Link>
 
-            <Link href="/events">
+            <Link href="/clubs">
               <Button variant="outline" size="lg" className="px-5">Clubs</Button>
             </Link>
           </div>
@@ -106,10 +106,10 @@ export default function LandingPage() {
             <div className="p-2 rounded-md bg-amber-100">
               <Coffee className="h-6 w-6 text-amber-700" />
             </div>
-            <CardTitle>Study Rooms</CardTitle>
+            <CardTitle>Leave and Attendance</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-slate-600">
-            Create or join focused rooms — set timers, share notes, and pair with study buddies.
+            Manage Attendance, Duty Leaves and other administrative functions in one place.
           </CardContent>
         </Card>
 

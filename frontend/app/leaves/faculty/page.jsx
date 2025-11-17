@@ -4,6 +4,7 @@ import { fetchLeavesForFaculty, approveLeave } from "@/lib/leaveHelpers";
 import { Button } from "@/components/ui/button";
 import useSupabaseAuth from "@/lib/useSupabaseAuth";
 import Navbar from "../../../components/Navbar";
+import Link from "next/link";
 
 export default function FacultyLeavesPage() {
   const { user, isStudent, isFaculty } = useSupabaseAuth();
@@ -89,10 +90,28 @@ export default function FacultyLeavesPage() {
       setApprovingId(null);
     }
   }
-
   return (
     <>
       <Navbar />
+
+      {/* Breadcrumb */}
+      <div className="max-w-3xl mx-auto px-6 pt-6 pb-2">
+        <nav
+          className="flex items-center text-sm text-slate-600"
+          aria-label="Breadcrumb"
+        >
+          <Link href="/" className="hover:underline">
+            Home
+          </Link>
+          <span className="mx-2 select-none">›</span>
+          <span className="font-medium text-slate-900">Leaves</span>
+        </nav>
+
+        <p className="mt-2 text-sm text-slate-600">
+          Approve or review duty leave applications submitted by students.
+        </p>
+      </div>
+
       <div className="max-w-3xl mx-auto p-6">
         <h2 className="text-2xl font-semibold mb-4">Incoming Duty Leaves</h2>
 
@@ -113,24 +132,31 @@ export default function FacultyLeavesPage() {
             </div>
 
             {/* helpful RLS hint */}
-            {errorInfo.status === 401 || errorInfo.status === 403 ? (
+            {(errorInfo.status === 401 || errorInfo.status === 403) && (
               <div className="mt-2 text-xs text-slate-700">
                 This looks like a permission (RLS) issue. For quick testing, run
                 this SQL in Supabase SQL editor to allow faculty role to select
                 duty_leaves:
                 <pre className="mt-2 p-2 bg-white text-xs rounded border">
-                  create policy if not exists
-                  "dutyleaves_select_for_faculty_role" on public.duty_leaves for
-                  select using ( exists ( select 1 from public.profiles p where
-                  p.id = auth.uid() and p.role = 'faculty' ) );
+                  {`create policy if not exists
+  "dutyleaves_select_for_faculty_role"
+  on public.duty_leaves
+  for select using (
+    exists (
+      select 1
+      from public.profiles p
+      where p.id = auth.uid()
+      and p.role = 'faculty'
+    )
+  );`}
                 </pre>
-                After testing you can remove the policy with:
+                Remove with:
                 <pre className="mt-2 p-2 bg-white text-xs rounded border">
-                  drop policy if exists "dutyleaves_select_for_faculty_role" on
-                  public.duty_leaves;
+                  {`drop policy if exists "dutyleaves_select_for_faculty_role" 
+on public.duty_leaves;`}
                 </pre>
               </div>
-            ) : null}
+            )}
           </div>
         )}
 

@@ -42,13 +42,13 @@ export default function EventsPage() {
       const res = await fetch("/api/events");
       const data = await res.json();
       if (!res.ok) {
-        console.error("Failed to fetch events", data);
+        console.log("Failed to fetch events", data);
         setEvents([]);
       } else {
         setEvents(Array.isArray(data) ? data : []);
       }
     } catch (err) {
-      console.error("fetch events error", err);
+      console.log("fetch events error", err);
       setEvents([]);
     } finally {
       setLoading(false);
@@ -92,7 +92,7 @@ export default function EventsPage() {
       // refresh list
       setEvents((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
-      console.error("delete error", err);
+      console.log("delete error", err);
       alert("Delete failed");
     }
   }
@@ -276,9 +276,6 @@ export default function EventsPage() {
 
                   {isAdmin && (
                     <>
-                      <Link href={`/events/edit/${ev.id}`}>
-                        <Button size="sm">Edit</Button>
-                      </Link>
                       <Button
                         size="sm"
                         variant="destructive"

@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import useSupabaseAuth from "@/lib/useSupabaseAuth";
+import Link from "next/link";
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -38,12 +40,10 @@ export default function ProfilePage() {
         .single();
 
       if (error) {
-        // If profile not found, create a minimal profile row (upsert)
         if (
           error.code === "PGRST116" ||
           error.message?.includes("Results contain no rows")
         ) {
-          // upsert minimal
           await supabase.from("profiles").upsert({
             id: user.id,
             email: user.email,
@@ -52,7 +52,7 @@ export default function ProfilePage() {
               user.email.split("@")[0],
             full_name: user.user_metadata?.full_name || "",
           });
-          // try fetch again
+
           const { data: d2 } = await supabase
             .from("profiles")
             .select(
@@ -60,10 +60,12 @@ export default function ProfilePage() {
             )
             .eq("id", uid)
             .single();
+
           setProfile(d2);
           setFetching(false);
           return;
         }
+
         console.error("Profile fetch error", error);
       } else {
         setProfile(data);
@@ -95,14 +97,36 @@ export default function ProfilePage() {
     const name =
       profile.full_name || profile.display_name || profile.email || "";
     const parts = name.trim().split(/\s+/).filter(Boolean);
+
     if (parts.length === 0) return "";
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+
     return (parts[0][0] + parts[1][0]).toUpperCase();
   })();
 
   return (
     <>
       <Navbar />
+
+      {/* Breadcrumb */}
+      <div className="max-w-3xl mx-auto px-6 pt-6 pb-2">
+        <nav
+          className="flex items-center text-sm text-slate-600"
+          aria-label="Breadcrumb"
+        >
+          <Link href="/" className="hover:underline">
+            Home
+          </Link>
+          <span className="mx-2 select-none">›</span>
+          <span className="font-medium text-slate-900">Profile</span>
+        </nav>
+
+        <p className="mt-2 text-sm text-slate-600">
+          Your account details, role, and profile information.
+        </p>
+      </div>
+
+      {/* Main card */}
       <div className="max-w-3xl mx-auto p-6">
         <Card className="p-6">
           <CardHeader className="flex items-center justify-between">
@@ -111,7 +135,11 @@ export default function ProfilePage() {
                 {profile.avatar_url ? (
                   <AvatarImage
                     src={profile.avatar_url}
-                    alt={profile.display_name || profile.full_name || "avatar"}
+                    alt={
+                      profile.display_name ||
+                      profile.full_name ||
+                      "user avatar"
+                    }
                   />
                 ) : (
                   <AvatarFallback>{initials}</AvatarFallback>
@@ -120,20 +148,25 @@ export default function ProfilePage() {
 
               <div>
                 <CardTitle className="text-lg">
-                  {profile.full_name || profile.display_name || profile.email}
+                  {profile.full_name ||
+                    profile.display_name ||
+                    profile.email}
                 </CardTitle>
                 <div className="text-sm text-slate-600">{profile.role}</div>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="ghost" onClick={() => router.push("/dashboard")}>
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/dashboard")}
+              >
                 Back
               </Button>
               <Button
                 onClick={() =>
                   alert(
-                    "Edit UI not implemented — change profile via dashboard or add edit form"
+                    "Edit UI not implemented — add your own profile editor here"
                   )
                 }
               >
@@ -151,9 +184,6 @@ export default function ProfilePage() {
             </div>
             <div className="text-sm">
               <strong>Full name:</strong> {profile.full_name || "-"}
-            </div>
-            <div className="text-sm">
-              <strong>Phone:</strong> {profile.phone || "-"}
             </div>
             <div className="text-sm">
               <strong>Joined:</strong>{" "}
