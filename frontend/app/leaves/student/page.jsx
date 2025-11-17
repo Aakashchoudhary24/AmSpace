@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabaseClient";
 import Navbar from "../../../components/Navbar";
+import Link from "next/link";
 
 import {
   Popover,
@@ -189,150 +190,165 @@ export default function StudentLeavePage() {
   }
 
   return (
-    <>
-      <Navbar />
-      <div className="max-w-2xl mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-6">Submit Duty Leave</h1>
+  <>
+    <Navbar />
 
-        {toast && (
-          <div className="mb-4 p-3 rounded border bg-emerald-50 text-emerald-800">
-            <div className="font-semibold">{toast.title}</div>
-            <div className="text-sm">{toast.message}</div>
-          </div>
-        )}
+    {/* Breadcrumb */}
+    <div className="max-w-2xl mx-auto px-6 pt-6 pb-2">
+      <nav
+        className="flex items-center text-sm text-slate-600"
+        aria-label="Breadcrumb"
+      >
+        <Link href="/" className="hover:underline">
+          Home
+        </Link>
+        <span className="mx-2 select-none">›</span>
+        <span className="font-medium text-slate-900">Leaves</span>
+      </nav>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <p className="mt-2 text-sm text-slate-600">
+        Submit a duty leave request to your assigned faculty.
+      </p>
+    </div>
+
+    <div className="max-w-2xl mx-auto p-6">
+      <h1 className="text-2xl font-semibold mb-6">Submit Duty Leave</h1>
+
+      {/* Toast */}
+      {toast && (
+        <div className="mb-4 p-3 rounded border bg-emerald-50 text-emerald-800">
+          <div className="font-semibold">{toast.title}</div>
+          <div className="text-sm">{toast.message}</div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label>Faculty</Label>
+          <select
+            value={facultyId}
+            onChange={(e) => setFacultyId(e.target.value)}
+            className="w-full border rounded p-2"
+          >
+            {faculties.length === 0 && (
+              <option value="">No faculty found</option>
+            )}
+            {faculties.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.display_name || f.full_name || f.email} — {f.email}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <Label>Your email</Label>
+          <Input value={user?.email || ""} readOnly />
+        </div>
+
+        <div>
+          <Label>Roll number</Label>
+          <Input
+            value={rollNumber}
+            onChange={(e) => setRollNumber(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <Label>Branch</Label>
+          <Input
+            value={branch}
+            onChange={(e) => setBranch(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <Label>Reason</Label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="w-full border rounded p-2 h-28"
+          />
+        </div>
+
+        {/* Date pickers */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label>Faculty</Label>
-            <select
-              value={facultyId}
-              onChange={(e) => setFacultyId(e.target.value)}
-              className="w-full border rounded p-2"
-            >
-              {faculties.length === 0 && (
-                <option value="">No faculty found</option>
-              )}
-              {faculties.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.display_name || f.full_name || f.email} — {f.email}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <Label>Your email</Label>
-            <Input value={user?.email || ""} readOnly />
-          </div>
-
-          <div>
-            <Label>Roll number</Label>
-            <Input
-              value={rollNumber}
-              onChange={(e) => setRollNumber(e.target.value)}
+            <Label>Start date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start">
+                  {formatForDisplay(startDate)}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={startDate ? new Date(startDate) : undefined}
+                  onSelect={(d) => {
+                    if (!d) return;
+                    const iso = d.toISOString().slice(0, 10);
+                    setStartDate(iso);
+                    if (new Date(iso) > new Date(endDate)) {
+                      const nd = new Date(iso);
+                      nd.setDate(nd.getDate() + 1);
+                      setEndDate(nd.toISOString().slice(0, 10));
+                    }
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="hidden"
             />
           </div>
 
           <div>
-            <Label>Branch</Label>
-            <Input value={branch} onChange={(e) => setBranch(e.target.value)} />
-          </div>
-
-          <div>
-            <Label>Reason</Label>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full border rounded p-2 h-28"
+            <Label>End date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start">
+                  {formatForDisplay(endDate)}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={endDate ? new Date(endDate) : undefined}
+                  onSelect={(d) => {
+                    if (!d) return;
+                    const iso = d.toISOString().slice(0, 10);
+                    setEndDate(iso);
+                    if (new Date(startDate) > new Date(iso)) {
+                      const nd = new Date(iso);
+                      nd.setDate(nd.getDate() - 1);
+                      setStartDate(nd.toISOString().slice(0, 10));
+                    }
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="hidden"
             />
           </div>
+        </div>
 
-          {/* Date pickers using shadcn Calendar + Popover */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Start date</Label>
-              <div className="flex items-center gap-2">
-                {/* Popover + Calendar (shadcn style) */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start">
-                      {formatForDisplay(startDate)}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={startDate ? new Date(startDate) : undefined}
-                      onSelect={(d) => {
-                        if (!d) return;
-                        const iso = d.toISOString().slice(0, 10);
-                        setStartDate(iso);
-                        // ensure end date is not before start
-                        if (new Date(iso) > new Date(endDate)) {
-                          const nd = new Date(iso);
-                          nd.setDate(nd.getDate() + 1);
-                          setEndDate(nd.toISOString().slice(0, 10));
-                        }
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              {/* Hidden fallback for browsers without calendar UI (still present in markup) */}
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="hidden"
-              />
-            </div>
+        {errorMsg && <div className="text-sm text-red-600">{errorMsg}</div>}
 
-            <div>
-              <Label>End date</Label>
-              <div className="flex items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start">
-                      {formatForDisplay(endDate)}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={endDate ? new Date(endDate) : undefined}
-                      onSelect={(d) => {
-                        if (!d) return;
-                        const iso = d.toISOString().slice(0, 10);
-                        setEndDate(iso);
-                        // ensure start date is not after end
-                        if (new Date(startDate) > new Date(iso)) {
-                          const nd = new Date(iso);
-                          nd.setDate(nd.getDate() - 1);
-                          setStartDate(nd.toISOString().slice(0, 10));
-                        }
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="hidden"
-              />
-            </div>
-          </div>
-
-          {errorMsg && <div className="text-sm text-red-600">{errorMsg}</div>}
-
-          <div>
-            <Button type="submit" disabled={loadingSubmit}>
-              {loadingSubmit ? "Submitting…" : "Submit duty leave"}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </>
-  );
+        <div>
+          <Button type="submit" disabled={loadingSubmit}>
+            {loadingSubmit ? "Submitting…" : "Submit duty leave"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  </>
+);
 }
