@@ -4,10 +4,23 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar, MapPin, Search } from "lucide-react";
+import Navbar from "../../components/Navbar";
 
 export default function EventsPage() {
   // sample data: capacity + optional spotsLeft (null = unknown)
@@ -71,53 +84,23 @@ export default function EventsPage() {
   });
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-whitepx-4">
-      {/* Topbar with Home / AmSpace */}
-      <div className="backdrop-blur-sm bg-white/60 border-b">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 px-6 py-3">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-fuchsia-500 rounded-xl flex items-center justify-center text-white font-extrabold">
-                AS
-              </div>
-              <div>
-                <div className="text-lg font-semibold">AmSpace</div>
-                <div className="text-xs text-slate-600">Campus hub</div>
-              </div>
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden md:block">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search events, clubs, study rooms..."
-                className="w-72"
-                icon={<Search className="h-4 w-4 text-slate-400" />}
-              />
-            </div>
-
-            <Link href="/auth/login">
-              <Button variant="ghost" size="sm">Log in</Button>
-            </Link>
-            <Link href="/auth/register">
-              <Button size="sm">Sign up</Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Breadcrumb (replaces page heading) */}
+    <>
+      <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-4">
-        <nav className="flex items-center text-sm text-slate-600" aria-label="Breadcrumb">
-          <Link href="/" className="hover:underline">Home</Link>
+        <nav
+          className="flex items-center text-sm text-slate-600"
+          aria-label="Breadcrumb"
+        >
+          <Link href="/" className="hover:underline">
+            Home
+          </Link>
           <span className="mx-2 select-none">›</span>
           <span className="font-medium text-slate-900">Events</span>
         </nav>
 
         <p className="mt-2 text-sm text-slate-600">
-          Discover workshops, fests, study sessions and more — view details here and register on the university portal.
+          Discover workshops, fests, study sessions and more — view details here
+          and register on the university portal.
         </p>
       </div>
 
@@ -161,7 +144,11 @@ export default function EventsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {visibleEvents.length === 0 && (
             <div className="col-span-full text-center text-slate-600 p-10 bg-white rounded-lg shadow-sm">
-              No events found. Try a different filter or <Link href="/events/create" className="text-indigo-600 underline">create an event</Link>.
+              No events found. Try a different filter or{" "}
+              <Link href="/events/create" className="text-indigo-600 underline">
+                create an event
+              </Link>
+              .
             </div>
           )}
 
@@ -172,12 +159,18 @@ export default function EventsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <div className="text-lg font-semibold">{ev.title}</div>
-                      <Badge variant="secondary" className="text-xs">{ev.type}</Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {ev.type}
+                      </Badge>
                     </div>
 
                     <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-3">
-                      <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> {ev.date} • {ev.time}</span>
-                      <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {ev.location}</span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" /> {ev.date} • {ev.time}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" /> {ev.location}
+                      </span>
                     </div>
                   </div>
 
@@ -187,9 +180,13 @@ export default function EventsPage() {
                     <div className="text-lg font-medium">{ev.capacity}</div>
 
                     {typeof ev.spotsLeft === "number" ? (
-                      <div className="text-xs text-slate-500 mt-1">{ev.spotsLeft} spots left</div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {ev.spotsLeft} spots left
+                      </div>
                     ) : (
-                      <div className="text-xs text-amber-600 mt-1">Check availability on official portal</div>
+                      <div className="text-xs text-amber-600 mt-1">
+                        Check availability on official portal
+                      </div>
                     )}
                   </div>
                 </div>
@@ -200,22 +197,33 @@ export default function EventsPage() {
 
                 {expanded[ev.id] && (
                   <div className="mt-2 text-sm text-slate-700 space-y-2">
-                    <div><strong>More details</strong></div>
+                    <div>
+                      <strong>More details</strong>
+                    </div>
                     <div>Location: {ev.location}</div>
-                    <div>When: {ev.date} • {ev.time}</div>
+                    <div>
+                      When: {ev.date} • {ev.time}
+                    </div>
                     <div>Capacity: {ev.capacity}</div>
                     {typeof ev.spotsLeft === "number" ? (
                       <div>Spots left: {ev.spotsLeft}</div>
                     ) : (
-                      <div className="text-amber-600">Availability shown on external portal.</div>
+                      <div className="text-amber-600">
+                        Availability shown on external portal.
+                      </div>
                     )}
-                    <div className="pt-2 text-xs text-slate-500">Hosted by Student Council</div>
+                    <div className="pt-2 text-xs text-slate-500">
+                      Hosted by Student Council
+                    </div>
                   </div>
                 )}
               </CardContent>
 
               <CardFooter className="flex items-center justify-between">
-                <div className="text-xs text-slate-500">Details appear inline — registration happens on the official portal</div>
+                <div className="text-xs text-slate-500">
+                  Details appear inline — registration happens on the official
+                  portal
+                </div>
 
                 <div className="flex items-center gap-2">
                   <button
@@ -231,7 +239,9 @@ export default function EventsPage() {
                     rel="noopener noreferrer"
                     className="inline-block"
                   >
-                    <Button size="sm" variant="outline">Register</Button>
+                    <Button size="sm" variant="outline">
+                      Register
+                    </Button>
                   </a>
                 </div>
               </CardFooter>
@@ -241,13 +251,17 @@ export default function EventsPage() {
 
         {/* quick footer/pagination */}
         <div className="mt-8 flex items-center justify-between">
-          <div className="text-sm text-slate-600">Showing {visibleEvents.length} of {events.length} events</div>
+          <div className="text-sm text-slate-600">
+            Showing {visibleEvents.length} of {events.length} events
+          </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">Prev</Button>
+            <Button variant="outline" size="sm">
+              Prev
+            </Button>
             <Button size="sm">Next</Button>
           </div>
         </div>
       </div>
-    </main>
+    </>
   );
 }
