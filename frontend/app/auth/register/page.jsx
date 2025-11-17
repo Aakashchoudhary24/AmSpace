@@ -8,6 +8,12 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabaseClient';
 import { Users } from 'lucide-react';
 
+function computeRoleFromEmail(email = '') {
+  if (typeof email !== 'string') return 'student';
+  const e = email.toLowerCase().trim();
+  return e.endsWith('@am.students.amrita.edu') ? 'student' : 'faculty';
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -16,6 +22,23 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  async function upsertProfileRow(user) {
+    if (!user) return;
+    const role = computeRoleFromEmail(user.email);
+    const payload = {
+      id: user.id,
+      email: user.email,
+      display_name: user.user_metadata?.full_name?.split(' ')[0] ?? user.email.split('@')[0],
+      full_name: user.user_metadata?.full_name ?? '',
+      role
+    };
+    try {
+      await supabase.from('profiles').upsert(payload, { returning: 'minimal' });
+    } catch (err) {
+      console.warn('upsertProfileRow error (ignored)', err);
+    }
+  }
 
   async function handleRegister(e) {
     e.preventDefault();
@@ -35,12 +58,19 @@ export default function RegisterPage() {
       return;
     }
 
+    // if auth returns a user object (some setups auto-confirm), upsert profile immediately
+    if (data?.user) {
+      // best-effort upsert so profile exists for UI
+      upsertProfileRow(data.user).catch(() => {});
+    }
+
     // If confirm email is enabled, user must check email. Otherwise they are signed in.
     if (data?.user && !data?.user?.confirmed_at) {
       setMessage('Check your email to confirm the account.');
       // still redirect to login after a short delay
       setTimeout(() => router.push('/auth/login'), 1200);
     } else {
+      // user may be signed-in; go to root (the hook will load profile)
       router.replace('/');
     }
   }

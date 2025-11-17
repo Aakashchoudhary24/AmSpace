@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -19,7 +19,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 
 export default function StudentLeavePage() {
-  const { user, loading } = useSupabaseAuth();
+  const { user, loading, isStudent, isFaculty } = useSupabaseAuth();
   const router = useRouter();
 
   const [faculties, setFaculties] = useState([]);
@@ -37,6 +37,9 @@ export default function StudentLeavePage() {
   });
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // notification toast state (appears when faculty approves)
+  const [toast, setToast] = useState(null);
 
   // fetch faculties
   useEffect(() => {
@@ -60,10 +63,75 @@ export default function StudentLeavePage() {
     })();
   }, [user, loading]);
 
-  // redirect to login if not signed in
+  // redirect/role handling
   useEffect(() => {
-    if (!loading && !user) router.replace("/auth/login");
-  }, [user, loading, router]);
+    if (!loading) {
+      if (!user) router.replace("/auth/login");
+      else if (isFaculty) router.replace("/leaves/faculty");
+    }
+  }, [user, isFaculty, loading]);
+
+  // realtime subscription: listen for notifications for this student
+  useEffect(() => {
+    if (!user) return;
+
+    let channel = null;
+    try {
+      channel = supabase
+        .channel(`public:notifications:profile:${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `profile_id=eq.${user.id}`,
+          },
+          (payload) => {
+            const rec = payload?.record ?? null;
+            if (!rec) return;
+
+            // Show an in-app toast only for leave_approved notifications
+            try {
+              if (rec.type === 'leave_approved') {
+                // payload may be JSON in rec.payload (string or object depending on your DB)
+                const payloadObj =
+                  typeof rec.payload === 'string'
+                    ? JSON.parse(rec.payload || '{}')
+                    : rec.payload || {};
+
+                const note = payloadObj.note ?? '';
+                setToast({
+                  title: 'Leave approved',
+                  message: `Your leave (ID: ${payloadObj.leave_id ?? ''}) was approved. ${note}`,
+                });
+
+                // auto-hide after 5s
+                setTimeout(() => setToast(null), 5000);
+              }
+            } catch (err) {
+              // fallback: show generic toast
+              setToast({
+                title: 'Notification',
+                message: 'You have a new notification',
+              });
+              setTimeout(() => setToast(null), 5000);
+            }
+          }
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn('Student page: subscribe error', err);
+    }
+
+    return () => {
+      try {
+        if (channel) supabase.removeChannel(channel);
+      } catch (err) {
+        // ignore
+      }
+    };
+  }, [user]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -125,6 +193,13 @@ export default function StudentLeavePage() {
       <Navbar />
       <div className="max-w-2xl mx-auto p-6">
         <h1 className="text-2xl font-semibold mb-6">Submit Duty Leave</h1>
+
+        {toast && (
+          <div className="mb-4 p-3 rounded border bg-emerald-50 text-emerald-800">
+            <div className="font-semibold">{toast.title}</div>
+            <div className="text-sm">{toast.message}</div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

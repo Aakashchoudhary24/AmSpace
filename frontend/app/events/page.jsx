@@ -1,13 +1,13 @@
+// frontend/app/events/page.jsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardHeader,
-  CardTitle,
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
@@ -20,53 +20,40 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar, MapPin, Search } from "lucide-react";
-import Navbar from "../../components/Navbar";
+import Navbar from "@/components/Navbar";
+import useSupabaseAuth from "@/lib/useSupabaseAuth";
 
 export default function EventsPage() {
-  // sample data: capacity + optional spotsLeft (null = unknown)
-  const initialEvents = [
-    {
-      id: 1,
-      title: "Hackathon: Build for Campus",
-      date: "Nov 22, 2025",
-      time: "10:00 AM",
-      location: "CS Dept Hall",
-      type: "Hackathon",
-      capacity: 120,
-      spotsLeft: 78,
-      about: "48-hour mini-hackathon for campus-focused apps. Food provided.",
-      externalUrl: "https://ulsav.com/",
-    },
-    {
-      id: 2,
-      title: "Open Mic Night",
-      date: "Nov 28, 2025",
-      time: "7:30 PM",
-      location: "Auditorium",
-      type: "Cultural",
-      capacity: 200,
-      spotsLeft: null,
-      about: "Sing, tell stories, or perform — signups open for 5-min slots.",
-      externalUrl: "https://ulsav.com/",
-    },
-    {
-      id: 3,
-      title: "Resume Workshop",
-      date: "Dec 02, 2025",
-      time: "3:00 PM",
-      location: "Library Conference Room",
-      type: "Workshop",
-      capacity: 40,
-      spotsLeft: 22,
-      about: "Hands-on resume review with placement cell seniors and alumni.",
-      externalUrl: "https://ulsav.com/",
-    },
-  ];
-
-  const [events] = useState(initialEvents);
+  const { user, isAdmin, loading: authLoading, supabase } = useSupabaseAuth();
+  const [events, setEvents] = useState([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  const [expanded, setExpanded] = useState({}); // { [id]: true }
+  const [expanded, setExpanded] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function fetchEvents() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/events");
+      const data = await res.json();
+      if (!res.ok) {
+        console.error("Failed to fetch events", data);
+        setEvents([]);
+      } else {
+        setEvents(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("fetch events error", err);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function toggleExpand(id) {
     setExpanded((p) => ({ ...p, [id]: !p[id] }));
@@ -74,14 +61,41 @@ export default function EventsPage() {
 
   const visibleEvents = events.filter((e) => {
     const q = query.trim().toLowerCase();
-    if (filter !== "all" && e.type.toLowerCase() !== filter) return false;
+    if (filter !== "all" && (e.type || "").toLowerCase() !== filter)
+      return false;
     if (!q) return true;
     return (
-      e.title.toLowerCase().includes(q) ||
-      e.type.toLowerCase().includes(q) ||
-      e.location.toLowerCase().includes(q)
+      (e.title || "").toLowerCase().includes(q) ||
+      (e.type || "").toLowerCase().includes(q) ||
+      (e.location || "").toLowerCase().includes(q)
     );
   });
+
+  async function handleDelete(id) {
+    if (!confirm("Delete this event? This cannot be undone.")) return;
+    try {
+      const token = (await supabase.auth.getSession()).data?.session
+        ?.access_token;
+      const res = await fetch("/api/events", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Delete failed: " + (data?.error ?? "Unknown"));
+        return;
+      }
+      // refresh list
+      setEvents((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error("delete error", err);
+      alert("Delete failed");
+    }
+  }
 
   return (
     <>
@@ -104,11 +118,9 @@ export default function EventsPage() {
         </p>
       </div>
 
-      {/* Controls + filters */}
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
           <div className="w-full md:w-1/2">
-            {/* mobile search */}
             <div className="md:hidden mb-2">
               <Input
                 value={query}
@@ -118,7 +130,6 @@ export default function EventsPage() {
                 icon={<Search className="h-4 w-4 text-slate-400" />}
               />
             </div>
-            {/* optional short description left intentionally minimal (no H1) */}
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
@@ -134,21 +145,39 @@ export default function EventsPage() {
               </SelectContent>
             </Select>
 
-            <Link href="/events/create">
-              <Button size="sm">Create Event</Button>
-            </Link>
+            {isAdmin ? (
+              <Link href="/events/create">
+                <Button size="sm">Create Event</Button>
+              </Link>
+            ) : (
+              <div className="w-24" />
+            )}
           </div>
         </div>
 
-        {/* Events grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {visibleEvents.length === 0 && (
+          {loading && (
+            <div className="col-span-full text-center p-10">Loading…</div>
+          )}
+
+          {!loading && visibleEvents.length === 0 && (
             <div className="col-span-full text-center text-slate-600 p-10 bg-white rounded-lg shadow-sm">
-              No events found. Try a different filter or{" "}
-              <Link href="/events/create" className="text-indigo-600 underline">
-                create an event
-              </Link>
-              .
+              No events found. Try a different filter
+              {isAdmin ? (
+                <>
+                  {" "}
+                  or{" "}
+                  <Link
+                    href="/events/create"
+                    className="text-indigo-600 underline"
+                  >
+                    create an event
+                  </Link>
+                  .
+                </>
+              ) : (
+                "."
+              )}
             </div>
           )}
 
@@ -166,7 +195,9 @@ export default function EventsPage() {
 
                     <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-3">
                       <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" /> {ev.date} • {ev.time}
+                        <Calendar className="h-4 w-4" />{" "}
+                        {ev.date ? new Date(ev.date).toLocaleDateString() : ""}{" "}
+                        • {ev.time || ""}
                       </span>
                       <span className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" /> {ev.location}
@@ -174,14 +205,13 @@ export default function EventsPage() {
                     </div>
                   </div>
 
-                  {/* capacity & spots left */}
                   <div className="text-right ml-4">
                     <div className="text-xs text-slate-500">Capacity</div>
                     <div className="text-lg font-medium">{ev.capacity}</div>
 
-                    {typeof ev.spotsLeft === "number" ? (
+                    {typeof ev.spots_left === "number" ? (
                       <div className="text-xs text-slate-500 mt-1">
-                        {ev.spotsLeft} spots left
+                        {ev.spots_left} spots left
                       </div>
                     ) : (
                       <div className="text-xs text-amber-600 mt-1">
@@ -194,7 +224,6 @@ export default function EventsPage() {
 
               <CardContent className="text-sm text-slate-700">
                 <p className="mb-3 line-clamp-3">{ev.about}</p>
-
                 {expanded[ev.id] && (
                   <div className="mt-2 text-sm text-slate-700 space-y-2">
                     <div>
@@ -202,11 +231,13 @@ export default function EventsPage() {
                     </div>
                     <div>Location: {ev.location}</div>
                     <div>
-                      When: {ev.date} • {ev.time}
+                      When:{" "}
+                      {ev.date ? new Date(ev.date).toLocaleDateString() : ""} •{" "}
+                      {ev.time}
                     </div>
                     <div>Capacity: {ev.capacity}</div>
-                    {typeof ev.spotsLeft === "number" ? (
-                      <div>Spots left: {ev.spotsLeft}</div>
+                    {typeof ev.spots_left === "number" ? (
+                      <div>Spots left: {ev.spots_left}</div>
                     ) : (
                       <div className="text-amber-600">
                         Availability shown on external portal.
@@ -219,13 +250,13 @@ export default function EventsPage() {
                 )}
               </CardContent>
 
-              <CardFooter className="flex items-center justify-between">
+              <CardFooter className="flex flex-col gap-3 mt-auto">
                 <div className="text-xs text-slate-500">
                   Details appear inline — registration happens on the official
                   portal
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => toggleExpand(ev.id)}
                     className="text-sm px-3 py-1 rounded-md hover:bg-slate-100"
@@ -234,22 +265,35 @@ export default function EventsPage() {
                   </button>
 
                   <a
-                    href={ev.externalUrl || "https://ulsav.com/"}
+                    href={ev.external_url || "https://ulsav.com/"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block"
                   >
                     <Button size="sm" variant="outline">
                       Register
                     </Button>
                   </a>
+
+                  {isAdmin && (
+                    <>
+                      <Link href={`/events/edit/${ev.id}`}>
+                        <Button size="sm">Edit</Button>
+                      </Link>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(ev.id)}
+                      >
+                        Delete
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardFooter>
             </Card>
           ))}
         </div>
 
-        {/* quick footer/pagination */}
         <div className="mt-8 flex items-center justify-between">
           <div className="text-sm text-slate-600">
             Showing {visibleEvents.length} of {events.length} events
