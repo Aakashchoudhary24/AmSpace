@@ -6,7 +6,7 @@ import useSupabaseAuth from "@/lib/useSupabaseAuth";
 import Navbar from "../../../components/Navbar";
 
 export default function FacultyLeavesPage() {
-  const { user } = useSupabaseAuth();
+  const { user, isStudent, isFaculty } = useSupabaseAuth();
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(false);
   const [approvingId, setApprovingId] = useState(null);
@@ -53,6 +53,13 @@ export default function FacultyLeavesPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) return;
+      if (isStudent) router.replace("/leaves/student");
+    }
+  }, [user, isStudent, loading]);
 
   useEffect(() => {
     if (user) loadLeaves();
