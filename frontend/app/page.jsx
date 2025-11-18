@@ -1,10 +1,9 @@
-'use client';
+"use client";
 
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Users, CalendarPlus, Gift, Coffee } from "lucide-react";
@@ -13,47 +12,57 @@ import Navbar from "@/components/Navbar";
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-[url('/patterns/students-bg.svg')] bg-cover bg-center text-slate-900">
-
       {/* Navbar */}
       <Navbar />
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 py-20 flex flex-col md:flex-row items-center gap-12">
         <div className="flex-1">
-          <h1 className="text-5xl sm:text-6xl font-extrabold leading-tight">
+          <h1 className="text-[3.8rem] sm:text-[5.2rem] font-light tracking-[-0.015em] leading-[1.03]">
             Meet • Learn • Collaborate
           </h1>
+
           <p className="mt-4 text-lg text-slate-700 max-w-2xl">
-            AmSpace is the student playground for learning together: form study rooms,
-            join clubs, register for events, and celebrate wins with your friends —
-            all on campus.
+            AmSpace is the student playground for learning together: form study
+            rooms, join clubs, register for events, and celebrate wins with your
+            friends — all on campus.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/discover">
-              <Button size="lg" className="shadow-lg">Enter the Hub</Button>
+              <Button size="lg" className="shadow-lg">
+                Enter the Hub
+              </Button>
             </Link>
 
             <Link href="/events">
-              <Button variant="outline" size="lg" className="px-5">Explore Events</Button>
+              <Button variant="outline" size="lg" className="px-5">
+                Explore Events
+              </Button>
             </Link>
 
             <Link href="/clubs">
-              <Button variant="outline" size="lg" className="px-5">Clubs</Button>
+              <Button variant="outline" size="lg" className="px-5">
+                Clubs
+              </Button>
             </Link>
           </div>
 
           <div className="mt-6 flex items-center gap-4">
             <Avatar>
               <AvatarImage src="/avatar-1.jpg" alt="student" />
-              <AvatarFallback>AR</AvatarFallback>
+              <AvatarFallback>RM</AvatarFallback>
             </Avatar>
             <div className="text-sm">
               <span className="font-semibold">Rithu</span>
-              <div className="text-xs text-slate-500">Joined a hackathon — 2 hrs ago</div>
+              <div className="text-xs text-slate-500">
+                Joined a hackathon — 2 hrs ago
+              </div>
             </div>
 
-            <Badge className="ml-4" variant="secondary">1200+ students active</Badge>
+            <Badge className="ml-4" variant="secondary">
+              1200+ students active
+            </Badge>
           </div>
         </div>
 
@@ -66,7 +75,9 @@ export default function LandingPage() {
               </div>
               <div>
                 <CardTitle className="text-base">Quick join</CardTitle>
-                <div className="text-xs text-slate-600">Pick a room or event and hop in</div>
+                <div className="text-xs text-slate-600">
+                  Pick a room or event and hop in
+                </div>
               </div>
             </CardHeader>
 
@@ -74,7 +85,9 @@ export default function LandingPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-medium">CSE Study Room</div>
-                  <div className="text-xs text-slate-500">Algorithms study sesh • 9 people</div>
+                  <div className="text-xs text-slate-500">
+                    Algorithms study sesh • 9 people
+                  </div>
                 </div>
                 <Button size="sm">Join</Button>
               </div>
@@ -82,17 +95,25 @@ export default function LandingPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-medium">Open Mic Night</div>
-                  <div className="text-xs text-slate-500">Cultural Club • Oct 21</div>
+                  <div className="text-xs text-slate-500">
+                    Cultural Club • Oct 21
+                  </div>
                 </div>
-                <Button variant="outline" size="sm">Register</Button>
+                <Button variant="outline" size="sm">
+                  Register
+                </Button>
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-medium">Design Collab</div>
-                  <div className="text-xs text-slate-500">Project pairing • 3 teams forming</div>
+                  <div className="text-xs text-slate-500">
+                    Project pairing • 3 teams forming
+                  </div>
                 </div>
-                <Button variant="ghost" size="sm">View</Button>
+                <Button variant="ghost" size="sm">
+                  View
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -109,7 +130,8 @@ export default function LandingPage() {
             <CardTitle>Leave and Attendance</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-slate-600">
-            Manage Attendance, Duty Leaves and other administrative functions in one place.
+            Manage Attendance, Duty Leaves and other administrative functions in
+            one place.
           </CardContent>
         </Card>
 
@@ -121,7 +143,8 @@ export default function LandingPage() {
             <CardTitle>Events & Fests</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-slate-600">
-            Discover workshops, hackathons, and cultural nights — RSVP and invite friends.
+            Discover workshops, hackathons, and cultural nights — RSVP and
+            invite friends.
           </CardContent>
         </Card>
 
@@ -133,7 +156,8 @@ export default function LandingPage() {
             <CardTitle>Clubs & Projects</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-slate-600">
-            Join clubs, collaborate on projects, and showcase your work at campus expos.
+            Join clubs, collaborate on projects, and showcase your work at
+            campus expos.
           </CardContent>
         </Card>
       </section>
