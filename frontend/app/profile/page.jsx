@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import useSupabaseAuth from "@/lib/useSupabaseAuth";
 import Link from "next/link";
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -93,6 +92,7 @@ export default function ProfilePage() {
     );
   }
 
+  {/*How we are getting the profile pfp initials*/}
   const initials = (() => {
     const name =
       profile.full_name || profile.display_name || profile.email || "";

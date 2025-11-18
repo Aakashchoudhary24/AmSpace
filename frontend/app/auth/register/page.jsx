@@ -1,27 +1,27 @@
-'use client';
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { supabase } from '@/lib/supabaseClient';
-import { Users } from 'lucide-react';
+"use client";
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/lib/supabaseClient";
+import { Users } from "lucide-react";
 
-function computeRoleFromEmail(email = '') {
-  if (typeof email !== 'string') return 'student';
+function computeRoleFromEmail(email = "") {
+  if (typeof email !== "string") return "student";
   const e = email.toLowerCase().trim();
-  return e.endsWith('@am.students.amrita.edu') ? 'student' : 'faculty';
+  return e.endsWith("@am.students.amrita.edu") ? "student" : "faculty";
 }
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   async function upsertProfileRow(user) {
     if (!user) return;
@@ -29,27 +29,45 @@ export default function RegisterPage() {
     const payload = {
       id: user.id,
       email: user.email,
-      display_name: user.user_metadata?.full_name?.split(' ')[0] ?? user.email.split('@')[0],
-      full_name: user.user_metadata?.full_name ?? '',
-      role
+      display_name:
+        user.user_metadata?.full_name?.split(" ")[0] ??
+        user.email.split("@")[0],
+      full_name: user.user_metadata?.full_name ?? "",
+      role,
     };
     try {
-      await supabase.from('profiles').upsert(payload, { returning: 'minimal' });
+      await supabase.from("profiles").upsert(payload, { returning: "minimal" });
     } catch (err) {
-      console.warn('upsertProfileRow error (ignored)', err);
+      console.warn("upsertProfileRow error (ignored)", err);
     }
   }
 
   async function handleRegister(e) {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setMessage('');
+    setError("");
+    setMessage("");
 
+    // 1️⃣ Check if user already exists (profiles table)
+    const { data: existingUser, error: checkError } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existingUser) {
+      setLoading(false);
+      setError(
+        "An account with this email already exists. Please use a different email."
+      );
+      return;
+    }
+
+    // 2️⃣ Proceed with registration only if NOT found
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name } }
+      options: { data: { full_name: name } },
     });
 
     setLoading(false);
@@ -58,20 +76,17 @@ export default function RegisterPage() {
       return;
     }
 
-    // if auth returns a user object (some setups auto-confirm), upsert profile immediately
+    // 3️⃣ Upsert profile
     if (data?.user) {
-      // best-effort upsert so profile exists for UI
       upsertProfileRow(data.user).catch(() => {});
     }
 
-    // If confirm email is enabled, user must check email. Otherwise they are signed in.
+    // 4️⃣ Redirect logic
     if (data?.user && !data?.user?.confirmed_at) {
-      setMessage('Check your email to confirm the account.');
-      // still redirect to login after a short delay
-      setTimeout(() => router.push('/auth/login'), 1200);
+      setMessage("Check your email to confirm the account.");
+      setTimeout(() => router.push("/auth/login"), 1200);
     } else {
-      // user may be signed-in; go to root (the hook will load profile)
-      router.replace('/');
+      router.replace("/");
     }
   }
 
@@ -86,17 +101,24 @@ export default function RegisterPage() {
             </div>
             <div>
               <div className="text-lg font-semibold">AmSpace</div>
-              <div className="text-xs text-slate-600">A campus hub for co-learning & campus life</div>
+              <div className="text-xs text-slate-600">
+                A campus hub for co-learning & campus life
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="hidden md:block">
-              <Input placeholder="Search events, clubs, study rooms..." className="w-72" />
+              <Input
+                placeholder="Search events, clubs, study rooms..."
+                className="w-72"
+              />
             </div>
 
             <Link href="/auth/login">
-              <Button variant="ghost" size="sm">Log in</Button>
+              <Button variant="ghost" size="sm">
+                Log in
+              </Button>
             </Link>
             <Link href="/auth/register">
               <Button size="sm">Sign up</Button>
@@ -156,18 +178,26 @@ export default function RegisterPage() {
 
                 <div className="flex items-center justify-between gap-4">
                   <Button type="submit" className="flex-1" disabled={loading}>
-                    {loading ? 'Creating…' : 'Create account'}
+                    {loading ? "Creating…" : "Create account"}
                   </Button>
 
-                  <Link href="/auth/login" className="text-sm text-slate-600 underline">Already registered?</Link>
+                  <Link
+                    href="/auth/login"
+                    className="text-sm text-slate-600 underline"
+                  >
+                    Already registered?
+                  </Link>
                 </div>
 
-                {message && <div className="text-sm text-emerald-700">{message}</div>}
+                {message && (
+                  <div className="text-sm text-emerald-700">{message}</div>
+                )}
                 {error && <div className="text-sm text-red-600">{error}</div>}
               </form>
 
               <div className="mt-6 text-xs text-slate-500">
-                By creating an account you agree to our Terms. We'll never share your data publicly.
+                By creating an account you agree to our Terms. We'll never share
+                your data publicly.
               </div>
             </CardContent>
           </Card>

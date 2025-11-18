@@ -145,6 +145,9 @@ export default function Navbar() {
             <Link href="/" className="px-3 py-2 rounded-md hover:bg-slate-100">
               Home
             </Link>
+            <Link href="/discover" className="px-3 py-2 rounded-md hover:bg-slate-100">
+              Discover
+            </Link>
             <Link
               href="/events"
               className="px-3 py-2 rounded-md hover:bg-slate-100"
