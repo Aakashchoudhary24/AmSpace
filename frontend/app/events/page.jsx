@@ -141,14 +141,14 @@ export default function EventsPage() {
               <p className="mt-2 text-slate-600 max-w-2xl">
                 Discover workshops, hackathons, cultural nights and study sessions — view details here and register on the official portal.
               </p>
-              <div className="mt-3 text-xs text-slate-500">Download spec:&nbsp;
+              <div className="mt-3 text-md text-slate-500">Official Portal :&nbsp;
                 <a
-                  href="/mnt/data/AmSpace-SRS.pdf"
+                  href="https://ulsav.com"
                   target="_blank"
                   rel="noreferrer"
                   className="underline text-indigo-600"
                 >
-                  AmSpace-SRS.pdf
+                  Ulsav
                 </a>
               </div>
             </div>
@@ -156,11 +156,11 @@ export default function EventsPage() {
             {/* Decorative stats (optional, kept minimal) */}
             <div className="hidden sm:flex items-center gap-4">
               <div className="text-center max-w-max px-4 py-2 rounded-xl bg-[#a1ff62] border border-white/6 shadow-sm">
-                <div className="text-xl text-black">Total</div>
+                <div className="text-xl font-extrabold text-black">Total</div>
                 <div className="text-xl">{events.length}</div>
               </div>
               <div className="text-center px-4 py-2 rounded-xl bg-[#a1ff62] border border-white/6 shadow-sm">
-                <div className="text-xl text-black">Showing</div>
+                <div className="text-xl font-extrabold text-black">Showing</div>
                 <div className="text-xl">{visibleEvents.length}</div>
               </div>
             </div>

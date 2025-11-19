@@ -165,7 +165,7 @@ export default function Navbar() {
 
             {/* Center logo */}
             <div className="text-xl w-[18vw] text-center tracking-tight">
-              AmSpace
+              <Link href={"/"}>AmSpace</Link>
             </div>
 
             {/* Right actions */}
@@ -281,7 +281,11 @@ export default function Navbar() {
                       className="p-2 rounded-md hover:bg-slate-100"
                       aria-label="Close menu"
                     >
-                      <svg className="h-5 w-5" stroke="currentColor" fill="none">
+                      <svg
+                        className="h-5 w-5"
+                        stroke="currentColor"
+                        fill="none"
+                      >
                         <path strokeWidth="1.6" d="M6 6l12 12M6 18L18 6" />
                       </svg>
                     </button>
@@ -379,7 +383,7 @@ export default function Navbar() {
 
                     <div className="mt-3 space-y-2">
                       <Link
-                        href="/dashboard"
+                        href="/error"
                         onClick={() => setMenuOpen(false)}
                         className="block py-1 hover:underline"
                       >
@@ -420,7 +424,9 @@ export default function Navbar() {
                             {user.user_metadata?.full_name || user.email}
                           </div>
                           {roleText && (
-                            <div className="text-xs text-slate-500">{roleText}</div>
+                            <div className="text-xs text-slate-500">
+                              {roleText}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -434,13 +440,20 @@ export default function Navbar() {
 
                     <div className="mt-2 space-y-2 max-h-40 overflow-auto">
                       {recentNotifications.length === 0 ? (
-                        <div className="text-sm text-slate-500">No notifications</div>
+                        <div className="text-sm text-slate-500">
+                          No notifications
+                        </div>
                       ) : (
                         recentNotifications.map((n) => (
-                          <div key={n.id} className="p-2 rounded bg-slate-100 text-sm">
+                          <div
+                            key={n.id}
+                            className="p-2 rounded bg-slate-100 text-sm"
+                          >
                             <div className="font-semibold">{n.type}</div>
                             <div className="text-xs text-slate-600">
-                              {typeof n.payload === "string" ? n.payload : JSON.stringify(n.payload)}
+                              {typeof n.payload === "string"
+                                ? n.payload
+                                : JSON.stringify(n.payload)}
                             </div>
                           </div>
                         ))
@@ -453,9 +466,15 @@ export default function Navbar() {
                 <div className="px-6 py-4 border-t flex justify-between text-sm text-slate-600">
                   <div>© {new Date().getFullYear()} AmSpace</div>
                   <div className="flex gap-4">
-                    <Link href="/privacy" className="text-sm hover:underline">Privacy</Link>
-                    <Link href="/terms" className="text-sm hover:underline">Terms</Link>
-                    <Link href="/contact" className="text-sm hover:underline">Contact</Link>
+                    <Link href="/privacy" className="text-sm hover:underline">
+                      Privacy
+                    </Link>
+                    <Link href="/terms" className="text-sm hover:underline">
+                      Terms
+                    </Link>
+                    <Link href="/contact" className="text-sm hover:underline">
+                      Contact
+                    </Link>
                   </div>
                 </div>
               </motion.div>

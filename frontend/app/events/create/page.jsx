@@ -121,7 +121,7 @@ export default function CreateEventPage() {
               <p className="mt-2 text-sm text-slate-600 max-w-xl">
                 Add an event to AmSpace. Event registration is handled on the external portal — include the external URL for registration.
               </p>
-              <div className="mt-2 text-xs text-slate-500">
+              <div className="mt-2 text-md text-slate-500">
                 Official Portal:&nbsp;
                 <a href="https://ulsav.com" className="text-indigo-600 underline" target="_blank" rel="noreferrer">
                   Ulsav
