@@ -133,12 +133,6 @@ export default function LandingPage() {
                           Explore Events
                         </Button>
                       </Link>
-
-                      <Link href="/clubs">
-                        <Button variant="outline" size="lg" className="px-5">
-                          Clubs
-                        </Button>
-                      </Link>
                     </div>
 
                     <div className="mt-6 flex items-center gap-4">
