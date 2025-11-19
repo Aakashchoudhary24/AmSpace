@@ -133,7 +133,7 @@ export default function AboutPage() {
 
         {/* Team */}
         <div className="mt-34">
-          <h2 className="text-5xl text-center mb-4">Meet the team</h2>
+          <h2 className="text-6xl text-center">Meet the team</h2>
 
           <div className="grid mt-20 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             {team.map((m) => (
@@ -167,21 +167,6 @@ export default function AboutPage() {
                 </CardContent>
               </Card>
             ))}
-          </div>
-        </div>
-
-        {/* CTA */}
-        <div className="mt-10 text-center">
-          <p className="text-sm text-slate-600">
-            Want to help build AmSpace? We welcome contributors and feedback.
-          </p>
-          <div className="mt-4 flex items-center justify-center gap-3">
-            <Link href="https://github.com/aakashchoudhary24/amspace">
-              <Button>GitHub</Button>
-            </Link>
-            <Link href="https://github.com/aakashchoudhary24/amspace">
-              <Button variant="outline">Contact</Button>
-            </Link>
           </div>
         </div>
       </section>
