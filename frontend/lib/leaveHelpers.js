@@ -248,7 +248,9 @@ export async function approveLeave({
   if (!existing.warden_approved) {
     return {
       data: null,
-      error: { message: "Warden must approve this leave before faculty can approve it" },
+      error: {
+        message: "Warden must approve this leave before faculty can approve it",
+      },
     };
   }
 
@@ -288,7 +290,10 @@ export async function approveLeave({
 
   // mark notified flag (best-effort / non-blocking)
   try {
-    await supabase.from("duty_leaves").update({ notified: true }).eq("id", leave_id);
+    await supabase
+      .from("duty_leaves")
+      .update({ notified: true })
+      .eq("id", leave_id);
   } catch (err) {
     console.warn("Failed to update notified flag (ignored)", err);
   }
@@ -396,3 +401,36 @@ export async function addNotification({ profile_id, type, payload = {} }) {
     .single();
   return { data, error };
 }
+
+// lib/leaveHelpers.js
+export async function fetchLeavesForWarden(warden_id = null) {
+  try {
+    let query = supabase
+      .from("duty_leaves")
+      .select("id, student_id, roll_number, branch, reason, start_date, end_date, status, warden_id, warden_approved, warden_approval_note, warden_approved_at, submitted_at")
+      .eq("warden_approved", false)
+      .order("submitted_at", { ascending: false });
+
+    if (warden_id) {
+      query = supabase
+        .from("duty_leaves")
+        .select("id, student_id, roll_number, branch, reason, start_date, end_date, status, warden_id, warden_approved, warden_approval_note, warden_approved_at, submitted_at")
+        .eq("warden_approved", false)
+        .or(`warden_id.is.null,warden_id.eq.${warden_id}`)
+        .order("submitted_at", { ascending: false });
+    }
+
+    const res = await query;
+    if (res.error) return { data: null, error: res.error };
+
+    // attach student profiles
+    const studentIds = Array.from(new Set((res.data || []).map(r => r.student_id).filter(Boolean)));
+    const profileMap = await loadProfilesMap(studentIds);
+    const merged = (res.data || []).map(row => ({ ...row, student: profileMap[row.student_id] || null }));
+
+    return { data: merged, error: null, status: res.status ?? null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+

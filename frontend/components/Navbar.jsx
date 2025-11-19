@@ -382,13 +382,6 @@ export default function Navbar() {
                     </div>
 
                     <div className="mt-3 space-y-2">
-                      <Link
-                        href="/error"
-                        onClick={() => setMenuOpen(false)}
-                        className="block py-1 hover:underline"
-                      >
-                        Dashboard
-                      </Link>
 
                       <Link
                         href="/leaves/student"
