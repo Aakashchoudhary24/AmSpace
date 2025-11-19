@@ -9,8 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Users, CalendarPlus, Gift, Coffee } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
+
+  const router = useRouter();
+
   return (
     <>
       <div className="min-h-screen w-full bg-white relative">
@@ -71,17 +75,6 @@ export default function LandingPage() {
                       </CardHeader>
 
                       <CardContent className="mt-3 grid gap-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="text-sm font-medium">
-                              CSE Study Room
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Algorithms study sesh • 9 people
-                            </div>
-                          </div>
-                          <Button size="sm">Join</Button>
-                        </div>
 
                         <div className="flex items-center justify-between">
                           <div>
@@ -92,7 +85,7 @@ export default function LandingPage() {
                               Oct 21
                             </div>
                           </div>
-                          <Button variant="outline" size="sm">
+                          <Button onClick={() => router.replace('/events')} variant="outline" size="sm">
                             Register
                           </Button>
                         </div>
