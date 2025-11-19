@@ -1,20 +1,24 @@
-// app/leaves/warden/page.jsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { fetchLeavesForWarden, wardenApproveLeave, rejectLeave } from "@/lib/leaveHelpers";
 import useSupabaseAuth from "@/lib/useSupabaseAuth";
 import Navbar from "../../../components/Navbar";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function WardenLeavesPage() {
   const { user, isWarden } = useSupabaseAuth();
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actioningId, setActioningId] = useState(null);
+  const subRef = useRef(null);
 
   async function loadLeaves() {
-    if (!user) return;
+    if (!user) {
+      console.debug("loadLeaves: no user");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetchLeavesForWarden(user.id);
@@ -24,14 +28,61 @@ export default function WardenLeavesPage() {
       } else {
         setLeaves(res.data || []);
       }
+    } catch (err) {
+      console.error("loadLeaves thrown:", err);
+      setLeaves([]);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (!user || !isWarden) return;
+    if (!user || !isWarden) {
+      // helpful debug
+      if (user && !isWarden) console.debug("User logged in but not warden:", user.id);
+      return;
+    }
     loadLeaves();
+
+    // create realtime subscription for duty_leaves that matter (unassigned OR assigned to this warden)
+    try {
+      // Remove previous subscription if any
+      if (subRef.current) {
+        try { supabase.removeChannel(subRef.current); } catch (e) {}
+        subRef.current = null;
+      }
+
+      // Listen to inserts/updates/deletes on duty_leaves
+      const channel = supabase
+        .channel(`public:duty_leaves:warden:${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "duty_leaves",
+            // Broad filter — we'll reload and let RLS keep things secure
+            // filter left empty so we receive relevant events
+          },
+          (payload) => {
+            // For debugging:
+            console.debug("duty_leaves change payload:", payload);
+            // Reload list whenever a relevant change occurs
+            loadLeaves();
+          }
+        )
+        .subscribe();
+
+      subRef.current = channel;
+    } catch (err) {
+      console.warn("Warden page: realtime subscribe failed", err);
+    }
+
+    return () => {
+      try {
+        if (subRef.current) supabase.removeChannel(subRef.current);
+      } catch (err) {}
+    };
   }, [user, isWarden]);
 
   async function handleApprove(l) {
@@ -80,6 +131,10 @@ export default function WardenLeavesPage() {
 
         {loading && <p>Loading…</p>}
 
+        {(!isWarden && user) && (
+          <div className="mb-4 p-3 rounded border bg-yellow-50 text-sm">You are not a warden — sign in with a warden account.</div>
+        )}
+
         {leaves.length === 0 && !loading && (
           <p className="text-sm text-slate-600">No pending warden approvals.</p>
         )}
@@ -87,8 +142,12 @@ export default function WardenLeavesPage() {
         <div className="space-y-4">
           {leaves.map((l) => (
             <div key={l.id} className="p-4 border rounded bg-white">
-              <div className="font-semibold">Roll: {l.roll_number}</div>
-              <div className="text-xs text-slate-500 mb-2">{l.branch}</div>
+              <div className="font-semibold">
+                {l.student?.display_name || l.student?.full_name || l.roll_number}
+              </div>
+              <div className="text-xs text-slate-500 mb-2">
+                {l.student?.email ?? "—"} • {l.branch}
+              </div>
               <div className="text-sm">{l.reason}</div>
 
               <div className="text-xs text-slate-500 mt-2">
@@ -106,7 +165,12 @@ export default function WardenLeavesPage() {
             </div>
           ))}
         </div>
+
+        <div className="mt-4 text-xs text-slate-500">
+          Debug: open the browser console and check for "fetchLeavesForWarden" logs and any permission errors.
+        </div>
       </div>
     </>
   );
 }
+  

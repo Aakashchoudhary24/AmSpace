@@ -402,35 +402,46 @@ export async function addNotification({ profile_id, type, payload = {} }) {
   return { data, error };
 }
 
-// lib/leaveHelpers.js
+// lib/leaveHelpers.js (append / replace the existing fetchLeavesForWarden)
 export async function fetchLeavesForWarden(warden_id = null) {
   try {
-    let query = supabase
-      .from("duty_leaves")
-      .select("id, student_id, roll_number, branch, reason, start_date, end_date, status, warden_id, warden_approved, warden_approval_note, warden_approved_at, submitted_at")
-      .eq("warden_approved", false)
-      .order("submitted_at", { ascending: false });
-
+    // Build base query: pending (warden_approved = false)
+    // If warden_id provided, show rows either unassigned or assigned to this warden
+    let res;
     if (warden_id) {
-      query = supabase
+      // Use OR to fetch unassigned or assigned to this warden
+      res = await supabase
         .from("duty_leaves")
-        .select("id, student_id, roll_number, branch, reason, start_date, end_date, status, warden_id, warden_approved, warden_approval_note, warden_approved_at, submitted_at")
+        .select(
+          "id, student_id, roll_number, branch, reason, start_date, end_date, status, warden_id, warden_approved, warden_approval_note, warden_approved_at, submitted_at"
+        )
         .eq("warden_approved", false)
         .or(`warden_id.is.null,warden_id.eq.${warden_id}`)
         .order("submitted_at", { ascending: false });
+    } else {
+      res = await supabase
+        .from("duty_leaves")
+        .select(
+          "id, student_id, roll_number, branch, reason, start_date, end_date, status, warden_id, warden_approved, warden_approval_note, warden_approved_at, submitted_at"
+        )
+        .eq("warden_approved", false)
+        .order("submitted_at", { ascending: false });
     }
 
-    const res = await query;
-    if (res.error) return { data: null, error: res.error };
+    if (res.error) return { data: null, error: res.error, status: res.status };
 
-    // attach student profiles
-    const studentIds = Array.from(new Set((res.data || []).map(r => r.student_id).filter(Boolean)));
+    // Attach student profiles so UI can show name/email
+    const studentIds = Array.from(
+      new Set((res.data || []).map((r) => r.student_id).filter(Boolean))
+    );
     const profileMap = await loadProfilesMap(studentIds);
-    const merged = (res.data || []).map(row => ({ ...row, student: profileMap[row.student_id] || null }));
+    const merged = (res.data || []).map((row) => ({
+      ...row,
+      student: profileMap[row.student_id] || null,
+    }));
 
     return { data: merged, error: null, status: res.status ?? null };
   } catch (err) {
     return { data: null, error: err };
   }
 }
-
