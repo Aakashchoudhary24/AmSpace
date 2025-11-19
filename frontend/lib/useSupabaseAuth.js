@@ -159,7 +159,7 @@ export default function useSupabaseAuth() {
   const isStudent = role === "student";
   const isFaculty = role === "faculty";
   const isAdmin = role === "admin";
-  const isWarden = role === "warden";
+  const isparent = role === "parent";
 
   return {
     user,
@@ -168,7 +168,7 @@ export default function useSupabaseAuth() {
     isStudent,
     isFaculty,
     isAdmin,
-    isWarden,
+    isparent,
     loading,
     supabase,
     signOut

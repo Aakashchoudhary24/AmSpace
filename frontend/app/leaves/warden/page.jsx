@@ -1,14 +1,14 @@
-// app/leaves/warden/page.jsx
+// app/leaves/parent/page.jsx
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { fetchLeavesForWarden, wardenApproveLeave, rejectLeave } from "@/lib/leaveHelpers";
+import { fetchLeavesForparent, parentApproveLeave, rejectLeave } from "@/lib/leaveHelpers";
 import useSupabaseAuth from "@/lib/useSupabaseAuth";
 import Navbar from "../../../components/Navbar";
 import { Button } from "@/components/ui/button";
 
-export default function WardenLeavesPage() {
-  const { user, isWarden } = useSupabaseAuth();
+export default function parentLeavesPage() {
+  const { user, isparent } = useSupabaseAuth();
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actioningId, setActioningId] = useState(null);
@@ -17,9 +17,9 @@ export default function WardenLeavesPage() {
     if (!user) return;
     setLoading(true);
     try {
-      const res = await fetchLeavesForWarden(user.id);
+      const res = await fetchLeavesForparent(user.id);
       if (res.error) {
-        console.error("fetchLeavesForWarden error:", res.error);
+        console.error("fetchLeavesForparent error:", res.error);
         setLeaves([]);
       } else {
         setLeaves(res.data || []);
@@ -30,17 +30,17 @@ export default function WardenLeavesPage() {
   }
 
   useEffect(() => {
-    if (!user || !isWarden) return;
+    if (!user || !isparent) return;
     loadLeaves();
-  }, [user, isWarden]);
+  }, [user, isparent]);
 
   async function handleApprove(l) {
     setActioningId(l.id);
     try {
-      const { data, error } = await wardenApproveLeave({
+      const { data, error } = await parentApproveLeave({
         leave_id: l.id,
-        warden_id: user.id,
-        approval_note: "Approved by warden",
+        parent_id: user.id,
+        approval_note: "Approved by parent",
       });
       if (error) {
         alert("Approve error: " + (error.message || JSON.stringify(error)));
@@ -59,8 +59,8 @@ export default function WardenLeavesPage() {
       const { data, error } = await rejectLeave({
         leave_id: l.id,
         approver_id: user.id,
-        approver_role: "warden",
-        rejection_note: "Rejected by warden",
+        approver_role: "parent",
+        rejection_note: "Rejected by parent",
       });
       if (error) {
         alert("Reject error: " + (error.message || JSON.stringify(error)));
@@ -76,12 +76,12 @@ export default function WardenLeavesPage() {
     <>
       <Navbar />
       <div className="max-w-3xl mx-auto p-6">
-        <h2 className="text-2xl font-semibold mb-4">Warden Approval</h2>
+        <h2 className="text-2xl font-semibold mb-4">parent Approval</h2>
 
         {loading && <p>Loading…</p>}
 
         {leaves.length === 0 && !loading && (
-          <p className="text-sm text-slate-600">No pending warden approvals.</p>
+          <p className="text-sm text-slate-600">No pending parent approvals.</p>
         )}
 
         <div className="space-y-4">

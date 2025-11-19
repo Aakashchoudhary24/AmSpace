@@ -54,7 +54,7 @@ export default function FacultyLeavesPage() {
     if (!user) return;
     setActioningId(l.id);
     try {
-      // faculty can only approve after warden has approved
+      // faculty can only approve after parent has approved
       const { data, error } = await approveLeave({
         leave_id: l.id,
         approver_id: user.id,
@@ -144,15 +144,15 @@ export default function FacultyLeavesPage() {
                     From {l.start_date} to {l.end_date}
                   </div>
 
-                  {/* warden state display */}
+                  {/* parent state display */}
                   <div className="mt-2 text-xs">
-                    {l.warden_approved ? (
+                    {l.parent_approved ? (
                       <span className="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-800 text-xs">
-                        Warden approved {l.warden_approved_at ? `on ${new Date(l.warden_approved_at).toLocaleString()}` : ""}
+                        parent approved {l.parent_approved_at ? `on ${new Date(l.parent_approved_at).toLocaleString()}` : ""}
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-xs">
-                        Awaiting warden approval
+                        Awaiting parent approval
                       </span>
                     )}
                   </div>
@@ -167,8 +167,8 @@ export default function FacultyLeavesPage() {
                         <Button
                           size="sm"
                           onClick={() => handleApprove(l)}
-                          disabled={actioningId === l.id || !l.warden_approved}
-                          title={!l.warden_approved ? "Cannot approve until warden approves" : "Approve"}
+                          disabled={actioningId === l.id || !l.parent_approved}
+                          title={!l.parent_approved ? "Cannot approve until parent approves" : "Approve"}
                         >
                           {actioningId === l.id ? "Working…" : "Approve"}
                         </Button>
@@ -184,9 +184,9 @@ export default function FacultyLeavesPage() {
                       </div>
 
                       {/* small hint text */}
-                      {!l.warden_approved && (
+                      {!l.parent_approved && (
                         <div className="text-xs text-slate-500 mt-1">
-                          This leave requires Warden approval first.
+                          This leave requires parent approval first.
                         </div>
                       )}
                     </div>

@@ -54,7 +54,7 @@ export async function submitLeave({
     start_date,
     end_date,
     status: "pending",
-    // initial warden fields will be defaults (false / null)
+    // initial parent fields will be defaults (false / null)
   };
 
   const { data, error } = await supabase
@@ -66,13 +66,13 @@ export async function submitLeave({
   return { data, error };
 }
 
-/** Fetch leaves for a student (includes faculty profile and warden fields) -- two-step fetch to avoid FK embedding problems */
+/** Fetch leaves for a student (includes faculty profile and parent fields) -- two-step fetch to avoid FK embedding problems */
 export async function fetchLeavesForStudent(student_id) {
   // 1) load duty leaves
   const res = await supabase
     .from("duty_leaves")
     .select(
-      "id, student_id, faculty_id, warden_id, warden_approved, warden_approval_note, warden_approved_at, roll_number, branch, reason, start_date, end_date, status, submitted_at, approval_note, approved_at, approver_id, approver_role, notified"
+      "id, student_id, faculty_id, parent_id, parent_approved, parent_approval_note, parent_approved_at, roll_number, branch, reason, start_date, end_date, status, submitted_at, approval_note, approved_at, approver_id, approver_role, notified"
     )
     .eq("student_id", student_id)
     .order("submitted_at", { ascending: false });
@@ -85,14 +85,14 @@ export async function fetchLeavesForStudent(student_id) {
       statusText: res.statusText,
     };
 
-  // 2) batch load faculty and warden profiles referenced by these leaves
+  // 2) batch load faculty and parent profiles referenced by these leaves
   const facultyIds = Array.from(
     new Set(res.data.map((r) => r.faculty_id).filter(Boolean))
   );
-  const wardenIds = Array.from(
-    new Set(res.data.map((r) => r.warden_id).filter(Boolean))
+  const parentIds = Array.from(
+    new Set(res.data.map((r) => r.parent_id).filter(Boolean))
   );
-  const profileIds = Array.from(new Set([...facultyIds, ...wardenIds]));
+  const profileIds = Array.from(new Set([...facultyIds, ...parentIds]));
 
   const profileMap = await loadProfilesMap(profileIds);
 
@@ -100,7 +100,7 @@ export async function fetchLeavesForStudent(student_id) {
   const merged = res.data.map((row) => ({
     ...row,
     faculty: profileMap[row.faculty_id] || null,
-    warden: profileMap[row.warden_id] || null,
+    parent: profileMap[row.parent_id] || null,
   }));
 
   return {
@@ -111,13 +111,13 @@ export async function fetchLeavesForStudent(student_id) {
   };
 }
 
-/** Fetch leaves for a faculty (includes student profile and warden fields) -- two-step fetch */
+/** Fetch leaves for a faculty (includes student profile and parent fields) -- two-step fetch */
 export async function fetchLeavesForFaculty(faculty_id) {
   try {
     const res = await supabase
       .from("duty_leaves")
       .select(
-        "id, student_id, faculty_id, warden_id, warden_approved, warden_approval_note, warden_approved_at, roll_number, branch, reason, start_date, end_date, status, submitted_at, approval_note, approved_at, approver_id, approver_role, notified"
+        "id, student_id, faculty_id, parent_id, parent_approved, parent_approval_note, parent_approved_at, roll_number, branch, reason, start_date, end_date, status, submitted_at, approval_note, approved_at, approver_id, approver_role, notified"
       )
       .eq("faculty_id", faculty_id)
       .order("submitted_at", { ascending: false });
@@ -137,7 +137,7 @@ export async function fetchLeavesForFaculty(faculty_id) {
     const profileIds = Array.from(
       new Set([
         ...studentIds,
-        ...res.data.map((r) => r.warden_id).filter(Boolean),
+        ...res.data.map((r) => r.parent_id).filter(Boolean),
       ])
     );
 
@@ -146,7 +146,7 @@ export async function fetchLeavesForFaculty(faculty_id) {
     const merged = res.data.map((row) => ({
       ...row,
       student: profileMap[row.student_id] || null,
-      warden: profileMap[row.warden_id] || null,
+      parent: profileMap[row.parent_id] || null,
     }));
 
     return {
@@ -161,11 +161,11 @@ export async function fetchLeavesForFaculty(faculty_id) {
 }
 
 /**
- * Warden approves a leave (sets warden_approved true)
+ * parent approves a leave (sets parent_approved true)
  */
-export async function wardenApproveLeave({
+export async function parentApproveLeave({
   leave_id,
-  warden_id,
+  parent_id,
   approval_note = "",
   student_email = null,
 }) {
@@ -173,10 +173,10 @@ export async function wardenApproveLeave({
   const { data: leaveData, error: leaveError } = await supabase
     .from("duty_leaves")
     .update({
-      warden_id,
-      warden_approved: true,
-      warden_approval_note: approval_note,
-      warden_approved_at: new Date().toISOString(),
+      parent_id,
+      parent_approved: true,
+      parent_approval_note: approval_note,
+      parent_approved_at: new Date().toISOString(),
     })
     .eq("id", leave_id)
     .select()
@@ -190,10 +190,10 @@ export async function wardenApproveLeave({
     .insert([
       {
         profile_id: leaveData.student_id,
-        type: "leave_warden_approved",
+        type: "leave_parent_approved",
         payload: {
           leave_id: leaveData.id,
-          approved_by: warden_id,
+          approved_by: parent_id,
           note: approval_note,
         },
       },
@@ -208,8 +208,8 @@ export async function wardenApproveLeave({
     if (toEmail) {
       const payload = {
         to_email: toEmail,
-        subject: `Warden approved your duty leave`,
-        html: `<p>Your leave from <strong>${leaveData.start_date}</strong> to <strong>${leaveData.end_date}</strong> has been <strong>approved by Warden</strong>.</p><p>Note: ${approval_note}</p>`,
+        subject: `parent approved your duty leave`,
+        html: `<p>Your leave from <strong>${leaveData.start_date}</strong> to <strong>${leaveData.end_date}</strong> has been <strong>approved by parent</strong>.</p><p>Note: ${approval_note}</p>`,
         notification_id: notifData?.id ?? null,
       };
       await fetch(FUNCTION_URL, {
@@ -226,7 +226,7 @@ export async function wardenApproveLeave({
 }
 
 /**
- * Faculty approves a leave - will only succeed if warden_approved === true
+ * Faculty approves a leave - will only succeed if parent_approved === true
  */
 export async function approveLeave({
   leave_id,
@@ -237,7 +237,7 @@ export async function approveLeave({
   // fetch current leave first
   const { data: existing, error: fetchErr } = await supabase
     .from("duty_leaves")
-    .select("id, warden_approved, student_id, start_date, end_date")
+    .select("id, parent_approved, student_id, start_date, end_date")
     .eq("id", leave_id)
     .single();
 
@@ -245,11 +245,11 @@ export async function approveLeave({
     return { data: null, error: fetchErr || { message: "Leave not found" } };
   }
 
-  if (!existing.warden_approved) {
+  if (!existing.parent_approved) {
     return {
       data: null,
       error: {
-        message: "Warden must approve this leave before faculty can approve it",
+        message: "parent must approve this leave before faculty can approve it",
       },
     };
   }
@@ -324,12 +324,12 @@ export async function approveLeave({
 }
 
 /**
- * Generic reject function (faculty or warden can reject)
+ * Generic reject function (faculty or parent can reject)
  */
 export async function rejectLeave({
   leave_id,
   approver_id,
-  approver_role = "faculty", // or "warden"
+  approver_role = "faculty", // or "parent"
   rejection_note = "",
   student_email = null,
 }) {
@@ -403,20 +403,20 @@ export async function addNotification({ profile_id, type, payload = {} }) {
 }
 
 // lib/leaveHelpers.js
-export async function fetchLeavesForWarden(warden_id = null) {
+export async function fetchLeavesForparent(parent_id = null) {
   try {
     let query = supabase
       .from("duty_leaves")
-      .select("id, student_id, roll_number, branch, reason, start_date, end_date, status, warden_id, warden_approved, warden_approval_note, warden_approved_at, submitted_at")
-      .eq("warden_approved", false)
+      .select("id, student_id, roll_number, branch, reason, start_date, end_date, status, parent_id, parent_approved, parent_approval_note, parent_approved_at, submitted_at")
+      .eq("parent_approved", false)
       .order("submitted_at", { ascending: false });
 
-    if (warden_id) {
+    if (parent_id) {
       query = supabase
         .from("duty_leaves")
-        .select("id, student_id, roll_number, branch, reason, start_date, end_date, status, warden_id, warden_approved, warden_approval_note, warden_approved_at, submitted_at")
-        .eq("warden_approved", false)
-        .or(`warden_id.is.null,warden_id.eq.${warden_id}`)
+        .select("id, student_id, roll_number, branch, reason, start_date, end_date, status, parent_id, parent_approved, parent_approval_note, parent_approved_at, submitted_at")
+        .eq("parent_approved", false)
+        .or(`parent_id.is.null,parent_id.eq.${parent_id}`)
         .order("submitted_at", { ascending: false });
     }
 
