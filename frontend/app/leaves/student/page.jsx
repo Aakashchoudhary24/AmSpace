@@ -1,4 +1,3 @@
-// leaves/student/page.jsx
 'use client';
 
 import React, { useEffect, useState } from "react";
@@ -19,6 +18,14 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+
+/**
+ * StudentLeavePage — improved UI:
+ * - cleaner card layout (left content, right status column)
+ * - consistent status badges and small note under badge
+ * - readable date formatting
+ * - preserved realtime/update/submit logic
+ */
 
 export default function StudentLeavePage() {
   const { user, loading, isStudent, isFaculty } = useSupabaseAuth();
@@ -287,18 +294,27 @@ export default function StudentLeavePage() {
     }
   }
 
-  function statusClass(s) {
+  function statusBadge(s) {
     switch (s) {
       case "approved":
-        return "px-3 py-1 rounded-full text-sm bg-green-800 text-white";
+        return (
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-800 text-white text-xs font-medium">
+            APPROVED
+          </div>
+        );
       case "rejected":
-        return "px-3 py-1 rounded-full text-sm bg-red-700 text-white";
+        return (
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-red-700 text-white text-xs font-medium">
+            REJECTED
+          </div>
+        );
       case "pending":
-        return "px-3 py-1 rounded-full text-sm bg-yellow-500 text-black";
-      case "cancelled":
-        return "px-3 py-1 rounded-full text-sm bg-gray-400 text-white";
       default:
-        return "px-3 py-1 rounded-full text-sm bg-gray-200 text-black";
+        return (
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-yellow-500 text-black text-xs font-medium">
+            PENDING
+          </div>
+        );
     }
   }
 
@@ -308,17 +324,11 @@ export default function StudentLeavePage() {
 
       {/* Breadcrumb */}
       <div className="max-w-2xl mx-auto px-6 pt-6 pb-2">
-        <nav
-          className="flex items-center text-sm text-slate-600"
-          aria-label="Breadcrumb"
-        >
-          <Link href="/" className="hover:underline">
-            Home
-          </Link>
+        <nav className="flex items-center text-sm text-slate-600" aria-label="Breadcrumb">
+          <Link href="/" className="hover:underline">Home</Link>
           <span className="mx-2 select-none">›</span>
           <span className="font-medium text-slate-900">Leaves</span>
         </nav>
-
         <p className="mt-2 text-sm text-slate-600">
           Submit a duty leave request to your assigned faculty.
         </p>
@@ -361,35 +371,57 @@ export default function StudentLeavePage() {
               No duty leave requests found. Click "Submit new leave" to create one.
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {leaves.map((l) => (
-                <div
-                  key={l.id}
-                  className="p-4 border rounded-lg shadow-sm bg-white flex justify-between items-start"
-                >
-                  <div>
-                    <div className="flex items-baseline gap-3">
-                      <div className="text-sm text-slate-500">
-                        {l.faculty ? (l.faculty.display_name || l.faculty.full_name || l.faculty.email) : "Faculty"}
+                <div key={l.id} className="p-4 border rounded-lg shadow-sm bg-white flex flex-col sm:flex-row justify-between gap-4">
+                  {/* left column */}
+                  <div className="flex-1">
+                    <div className="flex items-baseline justify-between gap-4">
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          {l.faculty ? (l.faculty.display_name || l.faculty.full_name || l.faculty.email) : "Faculty"}
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          {formatForDisplay(l.start_date)} → {formatForDisplay(l.end_date)}
+                        </div>
                       </div>
-                      <div className="text-sm text-slate-400">•</div>
-                      <div className="text-sm text-slate-500">
-                        {formatForDisplay(l.start_date)} → {formatForDisplay(l.end_date)}
+
+                      {/* small meta on top-right inside left column for narrow screens */}
+                      <div className="hidden sm:block text-xs text-slate-500">
+                        Submitted: {l.submitted_at ? new Date(l.submitted_at).toLocaleString() : "—"}
                       </div>
                     </div>
 
                     <div className="mt-2 text-sm text-slate-700">{l.reason}</div>
 
-                    <div className="mt-2 text-xs text-slate-500">
+                    <div className="mt-3 text-xs text-slate-500">
+                      {l.approval_note && <div>Note: {l.approval_note}</div>}
+                    </div>
+
+                    {/* Submitted timestamp visible under content for small screens */}
+                    <div className="mt-2 block sm:hidden text-xs text-slate-400">
                       Submitted: {l.submitted_at ? new Date(l.submitted_at).toLocaleString() : "—"}
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <div className={statusClass(l.status)}>{(l.status || "").toUpperCase()}</div>
-                    {l.approval_note && (
-                      <div className="text-xs mt-2 text-slate-500">Note: {l.approval_note}</div>
-                    )}
+                  {/* right column: status & small actions (kept simple for student view) */}
+                  <div className="w-full sm:w-48 flex flex-col items-start sm:items-end justify-between">
+                    <div className="mb-3">{statusBadge(l.status)}</div>
+
+                    {/* small hint for warden/faculty states */}
+                    <div className="text-xs text-slate-500">
+                      {l.status === "pending" ? (
+                        <>
+                          {l.warden_approved ? (
+                            <div>Warden approved{l.warden_approved_at ? ` on ${new Date(l.warden_approved_at).toLocaleString()}` : ""}</div>
+                          ) : (
+                            <div>Awaiting warden approval</div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-slate-400">Processed</div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -425,17 +457,19 @@ export default function StudentLeavePage() {
                 <Input value={user?.email || ""} readOnly />
               </div>
 
-              <div>
-                <Label>Roll number</Label>
-                <Input
-                  value={rollNumber}
-                  onChange={(e) => setRollNumber(e.target.value)}
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Roll number</Label>
+                  <Input
+                    value={rollNumber}
+                    onChange={(e) => setRollNumber(e.target.value)}
+                  />
+                </div>
 
-              <div>
-                <Label>Branch</Label>
-                <Input value={branch} onChange={(e) => setBranch(e.target.value)} />
+                <div>
+                  <Label>Branch</Label>
+                  <Input value={branch} onChange={(e) => setBranch(e.target.value)} />
+                </div>
               </div>
 
               <div>
@@ -474,12 +508,6 @@ export default function StudentLeavePage() {
                       />
                     </PopoverContent>
                   </Popover>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="hidden"
-                  />
                 </div>
 
                 <div>
@@ -507,12 +535,6 @@ export default function StudentLeavePage() {
                       />
                     </PopoverContent>
                   </Popover>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="hidden"
-                  />
                 </div>
               </div>
 

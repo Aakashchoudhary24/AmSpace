@@ -1,3 +1,4 @@
+// components/Navbar.jsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -12,17 +13,22 @@ import { supabase } from "@/lib/supabaseClient";
 
 /**
  * Navbar (fixed): OSMO-inspired centered pill + overlay menu
- * - Fixed formatting issues in overlay menu (links were inline)
- * - All overlay links now block + spaced
+ * - Fixed role detection and Leaves link so users are routed by role:
+ *   - student -> /leaves/student
+ *   - faculty -> /leaves/faculty
+ *   - warden  -> /leaves/warden
+ * - Uses profile.role from useSupabaseAuth when available, falls back to email heuristic.
+ * - Improved logout handling (disables button, closes menu, removes realtime channels).
  */
 
 export default function Navbar() {
-  const { user } = useSupabaseAuth();
+  const { user, profile, signOut: hookSignOut } = useSupabaseAuth();
   const router = useRouter();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [recentNotifications, setRecentNotifications] = useState([]);
+  const [signingOut, setSigningOut] = useState(false);
 
   // compute initials
   const initials = React.useMemo(() => {
@@ -34,7 +40,22 @@ export default function Navbar() {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }, [user]);
 
-  const roleText = user?.user_metadata?.role ?? null;
+  // prefer the profile.role (set in DB). fall back to user metadata or email heuristic.
+  const roleFromProfile = profile?.role ?? null;
+  const roleFromMeta = user?.user_metadata?.role ?? null;
+  const roleFromEmail =
+    typeof user?.email === "string" && user.email.endsWith("@am.students.amrita.edu")
+      ? "student"
+      : user?.email
+      ? "faculty"
+      : null;
+
+  const role = roleFromProfile || roleFromMeta || roleFromEmail || null;
+  const roleText = role; // displayable role
+
+  // compute leaves link depending on role
+  const leavesHref =
+    role === "faculty" ? "/leaves/faculty" : role === "warden" ? "/leaves/warden" : "/leaves/student";
 
   const overlayRef = useRef(null);
 
@@ -74,15 +95,23 @@ export default function Navbar() {
     let channel = null;
 
     (async () => {
-      const { data } = await supabase
-        .from("notifications")
-        .select("id,type,payload,created_at")
-        .eq("profile_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(10);
+      try {
+        const { data, error } = await supabase
+          .from("notifications")
+          .select("id,type,payload,created_at")
+          .eq("profile_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(10);
 
-      setRecentNotifications(data || []);
-      setNotificationsCount(data?.length || 0);
+        if (!error) {
+          setRecentNotifications(data || []);
+          setNotificationsCount(data?.length || 0);
+        } else {
+          console.warn("notifications fetch error:", error);
+        }
+      } catch (err) {
+        console.warn("notifications fetch thrown:", err);
+      }
     })();
 
     try {
@@ -106,6 +135,7 @@ export default function Navbar() {
         .subscribe();
     } catch (err) {
       // ignore subscription errors
+      console.warn("notifications subscribe failed", err);
     }
 
     return () => {
@@ -115,9 +145,48 @@ export default function Navbar() {
     };
   }, [user]);
 
+  // improved sign-out handler
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.replace("/");
+    if (signingOut) return;
+    setSigningOut(true);
+    // close menu immediately to give UI feedback
+    setMenuOpen(false);
+
+    try {
+      // prefer hook signOut if available (it may also do profile cleanup)
+      if (typeof hookSignOut === "function") {
+        await hookSignOut();
+      } else {
+        // fallback to direct supabase call
+        await supabase.auth.signOut();
+      }
+
+      // try to clear realtime channels (best-effort)
+      try {
+        if (typeof supabase.removeAllChannels === "function") {
+          // new supabase-client API
+          await supabase.removeAllChannels();
+        } else if (typeof supabase.removeChannel === "function") {
+          // no easy list here; best-effort: nothing else we can do client-side
+        }
+      } catch (chErr) {
+        console.warn("Failed to remove channels (ignored):", chErr);
+      }
+
+      // clear local UI state
+      setRecentNotifications([]);
+      setNotificationsCount(0);
+
+      // navigate to home
+      router.replace("/");
+      console.log("Signed out successfully");
+    } catch (err) {
+      console.error("Sign out failed:", err);
+      // show minimal feedback and let user try again
+      alert("Sign out failed — check console for details.");
+    } finally {
+      setSigningOut(false);
+    }
   }
 
   const backdropVariants = {
@@ -305,8 +374,8 @@ export default function Navbar() {
                         </Link>
                       </>
                     ) : (
-                      <Button size="sm" onClick={handleSignOut}>
-                        Logout
+                      <Button size="sm" onClick={handleSignOut} disabled={signingOut}>
+                        {signingOut ? "Signing out…" : "Logout"}
                       </Button>
                     )}
                   </div>
@@ -382,9 +451,9 @@ export default function Navbar() {
                     </div>
 
                     <div className="mt-3 space-y-2">
-
+                      {/* Leaves link now computed from role */}
                       <Link
-                        href="/leaves/student"
+                        href={leavesHref}
                         onClick={() => setMenuOpen(false)}
                         className="block py-1 hover:underline"
                       >
