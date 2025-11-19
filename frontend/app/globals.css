@@ -125,3 +125,34 @@
     @apply bg-background text-foreground;
   }
 }
+
+.marquee-wrapper {
+  overflow: hidden;
+}
+
+.marquee {
+  display: inline-flex;
+  gap: 1.5rem;
+  align-items: center;
+  white-space: nowrap;
+  animation: marquee-left 18s linear infinite;
+}
+
+@keyframes marquee-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee > * {
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    animation: none;
+  }
+}

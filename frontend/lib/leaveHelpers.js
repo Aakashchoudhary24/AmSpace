@@ -34,7 +34,7 @@ export async function submitLeave({
   // verify faculty_id is a real faculty profile
   const { data: facultyRow, error: facErr } = await supabase
     .from("profiles")
-    .select("id, email, role")
+    .select("id, email, role, display_name, full_name")
     .eq("id", faculty_id)
     .single();
 
@@ -45,32 +45,34 @@ export async function submitLeave({
     return { data: null, error: { message: "Selected user is not a faculty" } };
   }
 
+  const insertPayload = {
+    student_id,
+    faculty_id,
+    roll_number,
+    branch,
+    reason,
+    start_date,
+    end_date,
+    status: "pending",
+    // initial warden fields will be defaults (false / null)
+  };
+
   const { data, error } = await supabase
     .from("duty_leaves")
-    .insert([
-      {
-        student_id,
-        faculty_id,
-        roll_number,
-        branch,
-        reason,
-        start_date,
-        end_date,
-        status: "pending",
-      },
-    ])
+    .insert([insertPayload])
     .select()
     .single();
+
   return { data, error };
 }
 
-/** Fetch leaves for a student (includes faculty profile) -- two-step fetch to avoid FK embedding problems */
+/** Fetch leaves for a student (includes faculty profile and warden fields) -- two-step fetch to avoid FK embedding problems */
 export async function fetchLeavesForStudent(student_id) {
   // 1) load duty leaves
   const res = await supabase
     .from("duty_leaves")
     .select(
-      "id, student_id, faculty_id, roll_number, branch, reason, start_date, end_date, status, submitted_at"
+      "id, student_id, faculty_id, warden_id, warden_approved, warden_approval_note, warden_approved_at, roll_number, branch, reason, start_date, end_date, status, submitted_at, approval_note, approved_at, approver_id, approver_role, notified"
     )
     .eq("student_id", student_id)
     .order("submitted_at", { ascending: false });
@@ -83,16 +85,22 @@ export async function fetchLeavesForStudent(student_id) {
       statusText: res.statusText,
     };
 
-  // 2) batch load faculty profiles referenced by these leaves
+  // 2) batch load faculty and warden profiles referenced by these leaves
   const facultyIds = Array.from(
     new Set(res.data.map((r) => r.faculty_id).filter(Boolean))
   );
-  const facultyMap = await loadProfilesMap(facultyIds);
+  const wardenIds = Array.from(
+    new Set(res.data.map((r) => r.warden_id).filter(Boolean))
+  );
+  const profileIds = Array.from(new Set([...facultyIds, ...wardenIds]));
 
-  // 3) attach faculty object to each leave
+  const profileMap = await loadProfilesMap(profileIds);
+
+  // 3) attach profile objects to each leave
   const merged = res.data.map((row) => ({
     ...row,
-    faculty: facultyMap[row.faculty_id] || null,
+    faculty: profileMap[row.faculty_id] || null,
+    warden: profileMap[row.warden_id] || null,
   }));
 
   return {
@@ -103,13 +111,13 @@ export async function fetchLeavesForStudent(student_id) {
   };
 }
 
-/** Fetch leaves for a faculty (includes student profile) -- two-step fetch */
+/** Fetch leaves for a faculty (includes student profile and warden fields) -- two-step fetch */
 export async function fetchLeavesForFaculty(faculty_id) {
   try {
     const res = await supabase
       .from("duty_leaves")
       .select(
-        "id, student_id, faculty_id, roll_number, branch, reason, start_date, end_date, status, submitted_at"
+        "id, student_id, faculty_id, warden_id, warden_approved, warden_approval_note, warden_approved_at, roll_number, branch, reason, start_date, end_date, status, submitted_at, approval_note, approved_at, approver_id, approver_role, notified"
       )
       .eq("faculty_id", faculty_id)
       .order("submitted_at", { ascending: false });
@@ -126,11 +134,19 @@ export async function fetchLeavesForFaculty(faculty_id) {
     const studentIds = Array.from(
       new Set(res.data.map((r) => r.student_id).filter(Boolean))
     );
-    const studentMap = await loadProfilesMap(studentIds);
+    const profileIds = Array.from(
+      new Set([
+        ...studentIds,
+        ...res.data.map((r) => r.warden_id).filter(Boolean),
+      ])
+    );
+
+    const profileMap = await loadProfilesMap(profileIds);
 
     const merged = res.data.map((row) => ({
       ...row,
-      student: studentMap[row.student_id] || null,
+      student: profileMap[row.student_id] || null,
+      warden: profileMap[row.warden_id] || null,
     }));
 
     return {
@@ -145,29 +161,22 @@ export async function fetchLeavesForFaculty(faculty_id) {
 }
 
 /**
- * Approve a leave:
- * 1) update duty_leaves row
- * 2) insert into notifications
- * 3) call Edge Function (best-effort) to send email
- *
- * pass student_email if available (recommended)
+ * Warden approves a leave (sets warden_approved true)
  */
-// lib/leaveHelpers.js — replace approveLeave with this
-export async function approveLeave({
+export async function wardenApproveLeave({
   leave_id,
-  approver_id,
+  warden_id,
   approval_note = "",
   student_email = null,
 }) {
-  // 1) update leave
+  // 1) update duty_leaves
   const { data: leaveData, error: leaveError } = await supabase
     .from("duty_leaves")
     .update({
-      status: "approved",
-      approved_at: new Date().toISOString(),
-      approver_id,
-      approval_note,
-      notified: false, // will set to true after notification insert
+      warden_id,
+      warden_approved: true,
+      warden_approval_note: approval_note,
+      warden_approved_at: new Date().toISOString(),
     })
     .eq("id", leave_id)
     .select()
@@ -175,7 +184,92 @@ export async function approveLeave({
 
   if (leaveError) return { data: null, error: leaveError };
 
-  // 2) create notification record
+  // 2) create notification for student (optional)
+  const { data: notifData, error: notifError } = await supabase
+    .from("notifications")
+    .insert([
+      {
+        profile_id: leaveData.student_id,
+        type: "leave_warden_approved",
+        payload: {
+          leave_id: leaveData.id,
+          approved_by: warden_id,
+          note: approval_note,
+        },
+      },
+    ])
+    .select()
+    .single();
+
+  // best-effort email via Edge Function (non-blocking)
+  try {
+    const toEmail =
+      student_email || (leaveData.student && leaveData.student.email) || null;
+    if (toEmail) {
+      const payload = {
+        to_email: toEmail,
+        subject: `Warden approved your duty leave`,
+        html: `<p>Your leave from <strong>${leaveData.start_date}</strong> to <strong>${leaveData.end_date}</strong> has been <strong>approved by Warden</strong>.</p><p>Note: ${approval_note}</p>`,
+        notification_id: notifData?.id ?? null,
+      };
+      await fetch(FUNCTION_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    }
+  } catch (fnErr) {
+    console.warn("Edge function call failed (ignored)", fnErr);
+  }
+
+  return { data: leaveData, notification: notifData, error: null };
+}
+
+/**
+ * Faculty approves a leave - will only succeed if warden_approved === true
+ */
+export async function approveLeave({
+  leave_id,
+  approver_id,
+  approval_note = "",
+  student_email = null,
+}) {
+  // fetch current leave first
+  const { data: existing, error: fetchErr } = await supabase
+    .from("duty_leaves")
+    .select("id, warden_approved, student_id, start_date, end_date")
+    .eq("id", leave_id)
+    .single();
+
+  if (fetchErr || !existing) {
+    return { data: null, error: fetchErr || { message: "Leave not found" } };
+  }
+
+  if (!existing.warden_approved) {
+    return {
+      data: null,
+      error: { message: "Warden must approve this leave before faculty can approve it" },
+    };
+  }
+
+  // proceed to approve as faculty
+  const { data: leaveData, error: leaveError } = await supabase
+    .from("duty_leaves")
+    .update({
+      status: "approved",
+      approved_at: new Date().toISOString(),
+      approver_id,
+      approver_role: "faculty",
+      approval_note,
+      notified: false,
+    })
+    .eq("id", leave_id)
+    .select()
+    .single();
+
+  if (leaveError) return { data: null, error: leaveError };
+
+  // create notification
   const { data: notifData, error: notifError } = await supabase
     .from("notifications")
     .insert([
@@ -192,22 +286,14 @@ export async function approveLeave({
     .select()
     .single();
 
-  if (notifError) {
-    // Leave approved but notification creation failed
-    return { data: leaveData, error: null, notificationError: notifError };
-  }
-
-  // 2.5) mark duty_leaves.notified = true (so you can filter/report later)
+  // mark notified flag (best-effort / non-blocking)
   try {
-    await supabase
-      .from("duty_leaves")
-      .update({ notified: true })
-      .eq("id", leave_id);
+    await supabase.from("duty_leaves").update({ notified: true }).eq("id", leave_id);
   } catch (err) {
-    console.warn("Failed to update duty_leaves.notified (ignored):", err);
+    console.warn("Failed to update notified flag (ignored)", err);
   }
 
-  // 3) Best-effort: call Edge Function to send email (does not block success)
+  // best-effort email
   try {
     const toEmail =
       student_email || (leaveData.student && leaveData.student.email) || null;
@@ -216,7 +302,7 @@ export async function approveLeave({
         to_email: toEmail,
         subject: `Your duty leave has been approved`,
         html: `<p>Your leave from <strong>${leaveData.start_date}</strong> to <strong>${leaveData.end_date}</strong> has been <strong>approved</strong>.</p><p>Note: ${approval_note}</p>`,
-        notification_id: notifData.id,
+        notification_id: notifData?.id ?? null,
       };
 
       await fetch(FUNCTION_URL, {
@@ -226,11 +312,78 @@ export async function approveLeave({
       });
     }
   } catch (fnErr) {
-    // best-effort — swallow errors, leave is already approved and notification row exists
     console.warn("Edge function call failed (ignored)", fnErr);
   }
 
-  // return both leave and notification so caller can inspect
+  return { data: leaveData, notification: notifData, error: null };
+}
+
+/**
+ * Generic reject function (faculty or warden can reject)
+ */
+export async function rejectLeave({
+  leave_id,
+  approver_id,
+  approver_role = "faculty", // or "warden"
+  rejection_note = "",
+  student_email = null,
+}) {
+  // update row
+  const { data: leaveData, error: leaveError } = await supabase
+    .from("duty_leaves")
+    .update({
+      status: "rejected",
+      approver_id,
+      approver_role,
+      approval_note: rejection_note, // reuse this field to keep history simple
+      approved_at: new Date().toISOString(),
+    })
+    .eq("id", leave_id)
+    .select()
+    .single();
+
+  if (leaveError) return { data: null, error: leaveError };
+
+  // create notification row
+  const { data: notifData, error: notifError } = await supabase
+    .from("notifications")
+    .insert([
+      {
+        profile_id: leaveData.student_id,
+        type: "leave_rejected",
+        payload: {
+          leave_id: leaveData.id,
+          rejected_by: approver_id,
+          role: approver_role,
+          note: rejection_note,
+        },
+      },
+    ])
+    .select()
+    .single();
+
+  // best-effort email
+  try {
+    const toEmail =
+      student_email || (leaveData.student && leaveData.student.email) || null;
+    if (toEmail) {
+      const payload = {
+        to_email: toEmail,
+        subject: `Your duty leave has been rejected`,
+        html: `<p>Your leave from <strong>${leaveData.start_date}</strong> to <strong>${leaveData.end_date}</strong> has been <strong>rejected</strong> by ${approver_role}.</p><p>Note: ${rejection_note}</p>`,
+        notification_id: notifData?.id ?? null,
+      };
+
+      await fetch(FUNCTION_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    }
+  } catch (fnErr) {
+    console.warn("Edge function call failed (ignored)", fnErr);
+  }
+
   return { data: leaveData, notification: notifData, error: null };
 }
 

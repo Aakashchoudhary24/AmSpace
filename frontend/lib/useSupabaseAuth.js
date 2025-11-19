@@ -1,30 +1,29 @@
-// frontend/lib/useSupabaseAuth.js
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 /**
- * determineRoleByEmail:
- *  - students: emails ending with @am.students.amrita.edu
- *  - faculty: everything else by default
+ * Fallback ONLY for first-time signups before profile row is created.
+ * After profile exists, we ALWAYS use profile.role from DB.
  */
-function determineRoleByEmail(email = "") {
+function determineInitialRole(email = "") {
   if (typeof email !== "string") return "student";
   const e = email.toLowerCase().trim();
   if (e.endsWith("@am.students.amrita.edu")) return "student";
   return "faculty";
 }
 
+// Load a profile row by id
 async function fetchProfileById(id) {
   if (!id) return null;
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", id)
-    .limit(1)
     .single();
+
   if (error) {
-    console.warn("fetchProfileById error (ignored):", error);
+    console.warn("fetchProfileById error:", error);
     return null;
   }
   return data;
@@ -32,22 +31,21 @@ async function fetchProfileById(id) {
 
 /**
  * ensureProfile(user)
- * - creates profile only if not present
- * - DOES NOT overwrite an existing role (preserves 'admin' you set manually)
+ * Creates the profile if missing.
+ * DOES NOT override an existing role — preserves DB role.
  */
 async function ensureProfile(user) {
   if (!user) return;
 
   try {
-    const computedRole = determineRoleByEmail(user.email);
-
-    // check existing profile first
+    // 1. Check if the profile exists
     const { data: existing } = await supabase
       .from("profiles")
       .select("id, role")
       .eq("id", user.id)
-      .limit(1)
-      .single();
+      .maybeSingle();
+
+    const role = existing?.role ?? determineInitialRole(user.email);
 
     const payload = {
       id: user.id,
@@ -55,23 +53,25 @@ async function ensureProfile(user) {
       display_name:
         user.user_metadata?.full_name?.split(" ")[0] ??
         user.user_metadata?.name ??
-        user.email?.split("@")[0] ??
-        null,
-      full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
-      // preserve role if already present, otherwise set computedRole
-      role: existing ? existing.role : computedRole,
+        user.email.split("@")[0],
+      full_name:
+        user.user_metadata?.full_name ??
+        user.user_metadata?.name ??
+        "",
+      role, // preserve existing role or assign fallback for first login
     };
 
-    // upsert will create if not present, or update only the fields we provided.
     await supabase.from("profiles").upsert(payload, { returning: "minimal" });
   } catch (err) {
-    console.warn("ensureProfile error (ignored):", err);
+    console.warn("ensureProfile() failed:", err);
   }
 }
 
 /**
- * useSupabaseAuth hook
- * returns: { user, profile, isStudent, isFaculty, isAdmin, loading, supabase, signOut }
+ * useSupabaseAuth
+ * Unified role logic:
+ *   - role = profile.role (DB is source of truth)
+ *   - fallback only on first login: determineInitialRole()
  */
 export default function useSupabaseAuth() {
   const [user, setUser] = useState(null);
@@ -87,61 +87,56 @@ export default function useSupabaseAuth() {
     setProfile(p);
   }, []);
 
+  // Initial load
   useEffect(() => {
     let mounted = true;
 
     supabase.auth
       .getSession()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (!mounted) return;
+
         const u = data?.session?.user ?? null;
         setUser(u);
-        setLoading(false);
+
         if (u) {
-          ensureProfile(u).then(() => loadProfile(u.id));
+          await ensureProfile(u); // create profile if missing
+          await loadProfile(u.id);
         } else {
           setProfile(null);
         }
+
+        setLoading(false);
       })
       .catch((err) => {
-        console.warn("getSession error", err);
+        console.warn("getSession error:", err);
         if (mounted) setLoading(false);
       });
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) {
-        ensureProfile(u).then(() => loadProfile(u.id));
-      } else {
-        setProfile(null);
-      }
-    });
+    // Auth state listener
+    const { data: authSub } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        const u = session?.user ?? null;
+        setUser(u);
 
-    function safeUnsubscribe(sub) {
-      if (!sub) return;
-      try {
-        if (sub.subscription && typeof sub.subscription.unsubscribe === "function") {
-          sub.subscription.unsubscribe();
-          return;
+        if (u) {
+          await ensureProfile(u);
+          await loadProfile(u.id);
+        } else {
+          setProfile(null);
         }
-        if (typeof sub.unsubscribe === "function") {
-          sub.unsubscribe();
-          return;
-        }
-        if (typeof sub === "function") {
-          sub();
-          return;
-        }
-      } catch (err) {
-        console.warn("Failed to unsubscribe (ignored)", err);
       }
-    }
+    );
 
+    // Cleanup
     return () => {
       mounted = false;
-      safeUnsubscribe(subscription);
+      try {
+        authSub?.subscription?.unsubscribe();
+      } catch (err) {
+        console.warn("unsubscribe failed:", err);
+      }
     };
   }, [loadProfile]);
 
@@ -149,14 +144,33 @@ export default function useSupabaseAuth() {
     try {
       await supabase.auth.signOut();
     } catch (err) {
-      console.warn("signOut error (ignored)", err);
+      console.warn("signOut error:", err);
     }
   }, []);
 
-  const role = profile?.role ?? determineRoleByEmail(user?.email ?? "");
+  /**
+   * Role = profile.role ALWAYS (DB is the source of truth)
+   * Fallback ONLY if profile missing temporarily.
+   */
+  const role =
+    profile?.role ??
+    determineInitialRole(user?.email ?? "");
+
   const isStudent = role === "student";
   const isFaculty = role === "faculty";
   const isAdmin = role === "admin";
+  const isWarden = role === "warden";
 
-  return { user, profile, isStudent, isFaculty, isAdmin, loading, supabase, signOut };
+  return {
+    user,
+    profile,
+    role,
+    isStudent,
+    isFaculty,
+    isAdmin,
+    isWarden,
+    loading,
+    supabase,
+    signOut
+  };
 }
