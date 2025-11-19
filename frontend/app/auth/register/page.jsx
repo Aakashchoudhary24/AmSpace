@@ -1,4 +1,5 @@
-"use client";
+// app/auth/register/page.jsx (or wherever you keep it)
+'use client';
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -48,45 +49,80 @@ export default function RegisterPage() {
     setError("");
     setMessage("");
 
-    // 1️⃣ Check if user already exists (profiles table)
-    const { data: existingUser, error: checkError } = await supabase
-      .from("profiles")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
+    // Build signUp options (explicit redirect + metadata)
+    // Use window.location.origin on the client so the redirect always matches current host.
+    const redirectBase =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
-    if (existingUser) {
-      setLoading(false);
-      setError(
-        "An account with this email already exists. Please use a different email."
+    const signUpOptions = {
+      data: { full_name: name },
+      emailRedirectTo: `${redirectBase}/auth/verify`,
+    };
+
+    try {
+      console.log("Signing up", { email, name, signUpOptions });
+
+      // supabase-js v2: supabase.auth.signUp({ email, password }, { options: { ... } })
+      // some older/newer SDK shapes differ; we log the full response below.
+      const resp = await supabase.auth.signUp(
+        { email, password },
+        { options: signUpOptions }
       );
-      return;
-    }
 
-    // 2️⃣ Proceed with registration only if NOT found
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: name } },
-    });
+      console.log("supabase.auth.signUp response:", resp);
 
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-      return;
-    }
+      // Normalize response shapes:
+      // v2 typically returns { data: { user, ... }, error }
+      // older versions may return { user, session, error } etc.
+      const data = resp?.data ?? resp ?? {};
+      const err = resp?.error ?? resp?.error ?? null;
 
-    // 3️⃣ Upsert profile
-    if (data?.user) {
-      upsertProfileRow(data.user).catch(() => {});
-    }
+      if (err) {
+        console.error("signUp returned error:", err);
+        setError(err.message || JSON.stringify(err));
+        setLoading(false);
+        return;
+      }
 
-    // 4️⃣ Redirect logic
-    if (data?.user && !data?.user?.confirmed_at) {
-      setMessage("Check your email to confirm the account.");
-      setTimeout(() => router.push("/auth/login"), 1200);
-    } else {
-      router.replace("/");
+      // Inspect the user object in the response (if present)
+      const user =
+        data?.user ?? // v2
+        resp?.user ?? // older shapes
+        null;
+
+      console.log("signUp user object (if any):", user);
+
+      // best-effort upsert profile if a user object is returned
+      if (user) {
+        try {
+          await upsertProfileRow(user);
+        } catch (uerr) {
+          console.warn("upsertProfileRow failed", uerr);
+        }
+      }
+
+      // If confirmation required, the user will typically be returned
+      // but user.confirmed_at will be null/undefined. Show message accordingly.
+      const needsConfirmation =
+        user && !user?.confirmed_at && !user?.email_confirmed_at;
+
+      if (needsConfirmation) {
+        setMessage(
+          "Check your email to confirm the account. If you do not receive an email, check spam or contact admin."
+        );
+        // redirect to login after a short delay so the user sees the message
+        setTimeout(() => router.push("/auth/login"), 2200);
+      } else {
+        // either auto-confirmed or signed-in; navigate to home
+        router.replace("/");
+      }
+    } catch (thrownErr) {
+      console.error("signUp thrown error:", thrownErr);
+      setError(thrownErr?.message || String(thrownErr));
+    } finally {
+      setLoading(false);
     }
   }
 

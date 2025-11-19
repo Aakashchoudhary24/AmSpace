@@ -8,163 +8,258 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Users, CalendarPlus, Gift, Coffee } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import Image from "next/image";
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-[url('/patterns/students-bg.svg')] bg-cover bg-center text-slate-900">
-      {/* Navbar */}
+    <main className="min-h-screen bg-[url('/patterns/students-bg.svg')] bg-cover bg-center text-foreground">
       <Navbar />
 
-      {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 py-20 flex flex-col md:flex-row items-center gap-12">
-        <div className="flex-1">
-          <h1 className="text-[3.8rem] sm:text-[5.2rem] font-light tracking-[-0.015em] leading-[1.03]">
-            Meet • Learn • Collaborate
-          </h1>
+      {/* HERO */}
+      <section className="relative overflow-hidden">
+        {/* vertical center divider */}
+        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[1px] bg-border/60" />
 
-          <p className="mt-4 text-lg text-slate-700 max-w-2xl">
-            AmSpace is the student playground for learning together: form study
-            rooms, join clubs, register for events, and celebrate wins with your
-            friends — all on campus.
-          </p>
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/discover">
-              <Button size="lg" className="shadow-lg">
-                Enter the Hub
-              </Button>
-            </Link>
-
-            <Link href="/events">
-              <Button variant="outline" size="lg" className="px-5">
-                Explore Events
-              </Button>
-            </Link>
-
-            <Link href="/clubs">
-              <Button variant="outline" size="lg" className="px-5">
-                Clubs
-              </Button>
-            </Link>
-          </div>
-
-          <div className="mt-6 flex items-center gap-4">
-            <Avatar>
-              <AvatarImage src="/avatar-1.jpg" alt="student" />
-              <AvatarFallback>RM</AvatarFallback>
-            </Avatar>
-            <div className="text-sm">
-              <span className="font-semibold">Rithu</span>
-              <div className="text-xs text-slate-500">
-                Joined a hackathon — 2 hrs ago
-              </div>
+        <div className="max-w-7xl mx-auto px-6 py-24 lg:py-32">
+          <div className="relative grid grid-cols-1 lg:grid-cols-2 items-start gap-12">
+            {/* Left: giant type */}
+            <div className="flex items-start">
+              <h1
+                className="w-full leading-[0.98] tracking-[-0.02em] font-light text-[3.8rem] sm:text-[4.6rem] md:text-[5.8rem] lg:text-[7rem] xl:text-[8rem] text-left"
+                style={{ lineHeight: 0.98 }}
+              >
+                Meet <span className="mx-2 inline-block"></span> Learn <br />
+                <span className="block mt-3">Collaborate</span>
+              </h1>
             </div>
 
-            <Badge className="ml-4" variant="secondary">
-              1200+ students active
-            </Badge>
+            {/* Right: quick card and CTAs */}
+            <div className="flex flex-col items-start lg:items-end gap-8">
+              <div className="w-full max-w-md lg:max-w-sm">
+                <Card className="p-5 bg-gradient-to-tr from-white/80 to-indigo-50 shadow-md">
+                  <CardHeader className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-indigo-100">
+                      <Users className="h-6 w-6 text-indigo-700" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Quick join</CardTitle>
+                      <div className="text-xs text-muted-foreground">
+                        Pick a room or event and hop in
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="mt-3 grid gap-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium">
+                          CSE Study Room
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Algorithms study sesh • 9 people
+                        </div>
+                      </div>
+                      <Button size="sm">Join</Button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium">
+                          Open Mic Night
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Oct 21
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Register
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium">Design Collab</div>
+                        <div className="text-xs text-muted-foreground">
+                          3 teams
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        View
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="w-full lg:max-w-lg">
+                <p className="text-slate-600 max-w-xl">
+                  AmSpace is the student playground for learning together: form
+                  study rooms, join clubs, register for events, and celebrate
+                  wins with your friends — all on campus.
+                </p>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href="/discover">
+                    <Button size="lg" className="shadow-lg">
+                      Enter the Hub
+                    </Button>
+                  </Link>
+
+                  <Link href="/events">
+                    <Button variant="outline" size="lg" className="px-5">
+                      Explore Events
+                    </Button>
+                  </Link>
+
+                  <Link href="/clubs">
+                    <Button variant="outline" size="lg" className="px-5">
+                      Clubs
+                    </Button>
+                  </Link>
+                </div>
+
+                <div className="mt-6 flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage src="/avatar-1.jpg" alt="student" />
+                    <AvatarFallback>RM</AvatarFallback>
+                  </Avatar>
+                  <div className="text-sm">
+                    <span className="font-semibold">Rithu</span>
+                    <div className="text-xs text-muted-foreground">
+                      Joined a hackathon — 2 hrs ago
+                    </div>
+                  </div>
+
+                  <Badge className="ml-4" variant="secondary">
+                    1200+ students active
+                  </Badge>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Right card */}
-        <div className="w-full md:w-1/2">
-          <Card className="p-4 bg-gradient-to-tr from-white/80 to-indigo-50">
-            <CardHeader className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-indigo-100">
-                <Users className="h-6 w-6 text-indigo-700" />
-              </div>
-              <div>
-                <CardTitle className="text-base">Quick join</CardTitle>
-                <div className="text-xs text-slate-600">
-                  Pick a room or event and hop in
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="mt-3 grid gap-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium">CSE Study Room</div>
-                  <div className="text-xs text-slate-500">
-                    Algorithms study sesh • 9 people
-                  </div>
-                </div>
-                <Button size="sm">Join</Button>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium">Open Mic Night</div>
-                  <div className="text-xs text-slate-500">
-                    Cultural Club • Oct 21
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">
-                  Register
-                </Button>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium">Design Collab</div>
-                  <div className="text-xs text-slate-500">
-                    Project pairing • 3 teams forming
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm">
-                  View
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* A subtle center glyph (like the OSMO star) */}
+          <div className="absolute left-1/2 top-[34%] -translate-x-1/2 -translate-y-1/2">
+            <div className="rounded-sm p-1 bg-violet-500/0">
+              <svg
+                width="56"
+                height="56"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden
+              >
+                <path
+                  d="M12 2v20M2 12h20M4 4l16 16M20 4L4 20"
+                  stroke="#7c3aed"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <Card className="p-4 hover:scale-[1.02] transition-transform">
-          <CardHeader className="flex items-center gap-3">
-            <div className="p-2 rounded-md bg-amber-100">
-              <Coffee className="h-6 w-6 text-amber-700" />
+      {/* SHOWCASE ROW (refined OSMO-style tilted panels) */}
+      <section className="max-w-7xl mx-auto px-6 py-14">
+        <div className="relative overflow-visible">
+          <div className="flex flex-col md:flex-row items-end justify-center gap-8 md:gap-12 -mt-2">
+            {/* Left card */}
+            <div
+              className="w-[230px] sm:w-[270px] md:w-[300px] lg:w-[330px]
+                      transform-gpu rotate-[-7deg] hover:rotate-[-3deg]
+                      transition-transform duration-400 ease-out
+                      translate-y-5 hover:translate-y-1"
+            >
+              <div className="rounded-xl overflow-hidden border border-border bg-card shadow-xl">
+                <div className="aspect-[4/3] relative">
+                  <Image
+                    src="/showcase/leave.webp"
+                    alt="Showcase"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="px-4 py-3.5 bg-[#111]/95 text-white">
+                  <div className="font-semibold text-[13px]">
+                    Leave Management
+                  </div>
+                  <div className="text-[11px] leading-[1.45] text-white/75 mt-2">
+                    Manage attendance, duty leaves and all administrative
+                    approvals in one place.
+                  </div>
+                </div>
+              </div>
             </div>
-            <CardTitle>Leave and Attendance</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-slate-600">
-            Manage Attendance, Duty Leaves and other administrative functions in
-            one place.
-          </CardContent>
-        </Card>
 
-        <Card className="p-4 hover:scale-[1.02] transition-transform">
-          <CardHeader className="flex items-center gap-3">
-            <div className="p-2 rounded-md bg-emerald-100">
-              <CalendarPlus className="h-6 w-6 text-emerald-700" />
+            {/* Center card (slightly reduced size) */}
+            <div
+              className="w-[250px] sm:w-[310px] md:w-[360px] lg:w-[420px]
+                      transform-gpu rotate-[2deg] hover:rotate-[0deg]
+                      transition-transform duration-400 ease-out
+                      -translate-y-1 hover:-translate-y-0"
+            >
+              <div className="rounded-xl overflow-hidden border-2 border-border bg-card shadow-xl">
+                <div className="aspect-[4/3] relative">
+                  <Image
+                    src="/showcase/event.avif"
+                    alt="Showcase"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="px-5 py-4 bg-[#111]/95 text-white flex items-start justify-between">
+                  <div className="pr-4">
+                    <div className="font-semibold text-[14px]">
+                      Events & Fests
+                    </div>
+                    <div className="text-[12px] leading-[1.5] text-white/80 mt-2 max-w-sm">
+                      Discover workshops, hackathons, cultural programs, and
+                      campus-wide festivals.
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-white/60 self-end whitespace-nowrap">
+                    Explore →
+                  </div>
+                </div>
+              </div>
             </div>
-            <CardTitle>Events & Fests</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-slate-600">
-            Discover workshops, hackathons, and cultural nights — RSVP and
-            invite friends.
-          </CardContent>
-        </Card>
 
-        <Card className="p-4 hover:scale-[1.02] transition-transform">
-          <CardHeader className="flex items-center gap-3">
-            <div className="p-2 rounded-md bg-violet-100">
-              <Gift className="h-6 w-6 text-violet-700" />
+            {/* Right card */}
+            <div
+              className="w-[230px] sm:w-[270px] md:w-[300px] lg:w-[330px]
+                      transform-gpu rotate-[7deg] hover:rotate-[3deg]
+                      transition-transform duration-400 ease-out
+                      translate-y-5 hover:translate-y-1"
+            >
+              <div className="rounded-xl overflow-hidden border border-border bg-card shadow-xl">
+                <div className="aspect-[4/3] relative">
+                  <Image
+                    src="/showcase/club.jpg"
+                    alt="Showcase"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="px-4 py-3.5 bg-[#111]/95 text-white">
+                  <div className="font-semibold text-[13px]">
+                    Clubs & Projects
+                  </div>
+                  <div className="text-[11px] leading-[1.45] text-white/75 mt-2">
+                    Join clubs, collaborate with peers, and showcase your
+                    creations at campus expos.
+                  </div>
+                </div>
+              </div>
             </div>
-            <CardTitle>Clubs & Projects</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-slate-600">
-            Join clubs, collaborate on projects, and showcase your work at
-            campus expos.
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </section>
 
-      {/* Footer */}
-      <footer className="mt-10 py-8 text-sm text-slate-600">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      {/* FOOTER */}
+      <footer className="mt-12 py-8 text-sm text-muted-foreground">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div>AmSpace — built for students • © {new Date().getFullYear()}</div>
           <div className="flex items-center gap-4">
             <div className="text-xs">Privacy</div>
