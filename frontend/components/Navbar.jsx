@@ -164,7 +164,7 @@ export default function Navbar() {
             </button>
 
             {/* Center logo */}
-            <div className="text-xl w-[12.2vw] text-center tracking-tight">
+            <div className="text-xl w-[18vw] text-center tracking-tight">
               AmSpace
             </div>
 
